@@ -1,5 +1,7 @@
 <template>
-    <div>Hello World!</div>
+    <div class="h-svh w-svw overflow-hidden rounded-xl">
+        <RouterView />
+    </div>
 </template>
 
 <script setup lang="ts"></script>
