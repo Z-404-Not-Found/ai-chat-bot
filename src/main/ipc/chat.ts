@@ -1,23 +1,14 @@
 import { ipcMain, BrowserWindow } from 'electron'
-import { setItem } from './utils/userData'
-import { getOpenAIClient, resetOpenAIClient, ChatMessage } from './services/openai'
-import logger from './utils/logger'
-
-export const CHANNELS = {
-    OPENAI_SET_KEY: 'openai:setApiKey',
-    OPENAI_SET_BASE_URL: 'openai:setBaseURL',
-    OPENAI_CHAT: 'openai:chat',
-    OPENAI_CHAT_STREAM: 'openai:chatStream',
-    OPENAI_CANCEL: 'openai:cancelStream',
-    STREAM_CHUNK: 'chat-stream-chunk',
-    STREAM_END: 'chat-stream-end'
-} as const
+import { setItem } from '../utils/userData'
+import { getOpenAIClient, resetOpenAIClient, ChatMessage } from '../services/openai'
+import logger from '../utils/logger'
+import { CHANNELS } from './index'
 
 // Store active streams by requestId for cancellation
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const activeStreams = new Map<string, any>()
 
-export function registerIpcHandlers(): void {
+export function registerChatIpcHandlers(): void {
     ipcMain.handle(CHANNELS.OPENAI_SET_KEY, async (_, apiKey: string) => {
         try {
             setItem('openaiApiKey', apiKey)

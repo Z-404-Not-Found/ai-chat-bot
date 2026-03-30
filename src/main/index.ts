@@ -3,7 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { initUserData } from './utils/userData'
-import { registerIpcHandlers } from './ipc-handlers'
+import { registerIpcHandlers } from './ipc'
 
 function createWindow(): void {
     // 创建浏览器窗口。
