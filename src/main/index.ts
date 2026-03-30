@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { initUserData } from './utils/userData'
 
 function createWindow(): void {
     // 创建浏览器窗口。
@@ -40,6 +41,9 @@ function createWindow(): void {
 app.whenReady().then(() => {
     // 为 Windows 设置应用用户模型 ID
     electronApp.setAppUserModelId('com.electron')
+
+    // 初始化用户目录和数据
+    initUserData()
 
     // 开发环境下默认按 F12 打开或关闭 DevTools，
     // 生产环境下忽略 CommandOrControl + R 快捷键。
