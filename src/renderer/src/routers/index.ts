@@ -5,7 +5,7 @@ const router = createRouter({
     routes: [
         {
             path: '/',
-            component: () => import('@renderer/pages/Layout.vue')
+            component: () => import('@renderer/pages/ChatDemo.vue')
         }
     ]
 })

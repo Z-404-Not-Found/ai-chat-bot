@@ -1,11 +1,44 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
-// 渲染进程的自定义 API
-const api = {}
+const api = {
+    setApiKey: (key: string): Promise<void> => {
+        return ipcRenderer.invoke('openai:setApiKey', key) as Promise<void>
+    },
 
-// 如果启用了上下文隔离，则使用 `contextBridge` API 向
-// 渲染进程暴露 Electron API，否则直接添加到 DOM 全局对象。
+    setBaseURL: (url: string): Promise<void> => {
+        return ipcRenderer.invoke('openai:setBaseURL', url) as Promise<void>
+    },
+
+    sendMessageStream: (content: string): void => {
+        ipcRenderer.invoke('openai:chatStream', [{ role: 'user', content }])
+    },
+
+    cancelStream: (requestId: string): void => {
+        ipcRenderer.invoke('openai:cancelStream', requestId)
+    },
+
+    onStreamChunk: (callback: (chunk: string) => void): (() => void) => {
+        const handler = (_: Electron.IpcRendererEvent, data: { content: string }): void => {
+            callback(data.content)
+        }
+        ipcRenderer.on('chat-stream-chunk', handler)
+        return (): void => {
+            ipcRenderer.removeListener('chat-stream-chunk', handler)
+        }
+    },
+
+    onStreamEnd: (callback: (error?: string) => void): (() => void) => {
+        const handler = (_: Electron.IpcRendererEvent, data: { error?: string }): void => {
+            callback(data.error)
+        }
+        ipcRenderer.on('chat-stream-end', handler)
+        return (): void => {
+            ipcRenderer.removeListener('chat-stream-end', handler)
+        }
+    }
+}
+
 if (process.contextIsolated) {
     try {
         contextBridge.exposeInMainWorld('electron', electronAPI)

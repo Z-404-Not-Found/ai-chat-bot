@@ -1,8 +1,9 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { initUserData } from './utils/userData'
+import { registerIpcHandlers } from './ipc-handlers'
 
 function createWindow(): void {
     // 创建浏览器窗口。
@@ -45,15 +46,15 @@ app.whenReady().then(() => {
     // 初始化用户目录和数据
     initUserData()
 
+    // 注册 IPC handlers
+    registerIpcHandlers()
+
     // 开发环境下默认按 F12 打开或关闭 DevTools，
     // 生产环境下忽略 CommandOrControl + R 快捷键。
     // 参见 https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
     app.on('browser-window-created', (_, window) => {
         optimizer.watchWindowShortcuts(window)
     })
-
-    // IPC 测试
-    ipcMain.on('ping', () => console.log('pong'))
 
     createWindow()
 
