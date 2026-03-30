@@ -85,3 +85,31 @@ Uses composite TypeScript projects:
 ## Git Hooks
 
 Husky pre-commit hook runs `lint-staged` and `typecheck` on staged files.
+
+## Testing
+
+This project has **no test framework**. Testing is done inline within code:
+
+```typescript
+// TEST: <description>
+// ... test code ...
+// END TEST
+```
+
+When generating test code:
+
+- Always wrap in `// TEST:` and `// END TEST` comments
+- Include a clear description of what's being tested
+- Delete test code after verification
+
+Example:
+
+```typescript
+// TEST: verify userData setItem/getItem roundtrip
+const testKey = 'test_' + Date.now()
+setItem(testKey, { foo: 'bar' })
+const result = getItem(testKey)
+console.assert(result.foo === 'bar', 'roundtrip failed')
+removeItem(testKey)
+// END TEST
+```
