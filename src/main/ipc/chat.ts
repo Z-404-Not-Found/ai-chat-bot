@@ -1,9 +1,11 @@
 import { ipcMain, BrowserWindow } from 'electron'
 import { getObject } from '../utils/userData'
-import { getOpenAIClient, ChatMessage } from '../services/openai'
+import { getOpenAIClient } from '../services/openai'
+import type { ChatMessage, ChatRequest } from '../../shared/types'
 import logger from '../utils/logger'
 import { IPC_CHANNELS, IPC_SEND } from '../../shared/constants'
-import { AI_KEYS, DEFAULT_MODEL, DEFAULT_THINKING } from './aiConfig'
+import { AI_KEYS, DEFAULT_MODEL, DEFAULT_THINKING, DEFAULT_CONTEXT_COUNT } from './aiConfig'
+import { getMessagesByConversationId } from '../database/messages'
 
 // 存储活动中的流，用于取消请求
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -11,11 +13,23 @@ const activeStreams = new Map<string, any>()
 
 export function registerChatIpcHandlers(): void {
     // 非流式聊天
-    ipcMain.handle(IPC_CHANNELS.AI_CHAT_CREATE, async (_, messages: ChatMessage[]) => {
+    ipcMain.handle(IPC_CHANNELS.AI_CHAT_CREATE, async (_, request: ChatRequest) => {
         try {
             const client = getOpenAIClient()
             const model = getObject<string>(AI_KEYS.MODEL) || DEFAULT_MODEL
             const thinkingMode = getObject<boolean>(AI_KEYS.THINKING_MODE) ?? DEFAULT_THINKING
+            const contextCount = getObject<number>(AI_KEYS.CONTEXT_COUNT) ?? DEFAULT_CONTEXT_COUNT
+
+            // 获取历史消息
+            const history = getMessagesByConversationId(request.conversationId)
+            const recentHistory = history.slice(-contextCount)
+
+            // 构建完整消息列表
+            const messages: ChatMessage[] = recentHistory.map((msg) => ({
+                role: msg.role as 'user' | 'assistant' | 'system',
+                content: msg.content
+            }))
+            messages.push({ role: 'user', content: request.content })
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const params: any = { model, messages }
@@ -35,13 +49,25 @@ export function registerChatIpcHandlers(): void {
     })
 
     // 流式聊天
-    ipcMain.handle(IPC_CHANNELS.AI_CHAT_STREAM_START, async (event, messages: ChatMessage[]) => {
+    ipcMain.handle(IPC_CHANNELS.AI_CHAT_STREAM_START, async (event, request: ChatRequest) => {
         const requestId = `stream_${Date.now()}`
 
         try {
             const client = getOpenAIClient()
             const model = getObject<string>(AI_KEYS.MODEL) || DEFAULT_MODEL
             const thinkingMode = getObject<boolean>(AI_KEYS.THINKING_MODE) ?? DEFAULT_THINKING
+            const contextCount = getObject<number>(AI_KEYS.CONTEXT_COUNT) ?? DEFAULT_CONTEXT_COUNT
+
+            // 获取历史消息
+            const history = getMessagesByConversationId(request.conversationId)
+            const recentHistory = history.slice(-contextCount)
+
+            // 构建完整消息列表
+            const messages: ChatMessage[] = recentHistory.map((msg) => ({
+                role: msg.role as 'user' | 'assistant' | 'system',
+                content: msg.content
+            }))
+            messages.push({ role: 'user', content: request.content })
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const params: any = { model, messages, stream: true }

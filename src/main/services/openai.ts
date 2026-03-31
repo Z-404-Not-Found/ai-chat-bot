@@ -29,8 +29,3 @@ export function getOpenAIClient(): OpenAI {
 export function resetOpenAIClient(): void {
     openAIClient = null
 }
-
-export interface ChatMessage {
-    role: 'user' | 'assistant' | 'system'
-    content: string
-}

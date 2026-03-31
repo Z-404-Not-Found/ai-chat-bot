@@ -10,7 +10,26 @@ export const IPC_CHANNELS = {
     // AI 聊天
     AI_CHAT_CREATE: 'ai:chat:create',
     AI_CHAT_STREAM_START: 'ai:chat:stream-start',
-    AI_STREAM_CANCEL: 'ai:stream:cancel'
+    AI_STREAM_CANCEL: 'ai:stream:cancel',
+
+    // Character 角色
+    CHARACTER_LIST: 'character:list',
+    CHARACTER_GET: 'character:get',
+    CHARACTER_CREATE: 'character:create',
+    CHARACTER_UPDATE: 'character:update',
+    CHARACTER_DELETE: 'character:delete',
+
+    // Conversation 对话
+    CONVERSATION_LIST: 'conversation:list',
+    CONVERSATION_GET: 'conversation:get',
+    CONVERSATION_CREATE: 'conversation:create',
+    CONVERSATION_UPDATE: 'conversation:update',
+    CONVERSATION_DELETE: 'conversation:delete',
+
+    // Message 消息
+    MESSAGE_LIST: 'message:list',
+    MESSAGE_CREATE: 'message:create',
+    MESSAGE_DELETE: 'message:delete'
 } as const
 
 // IPC Send 通道 (main → renderer 通过 webContents.send)
@@ -21,9 +40,3 @@ export const IPC_SEND = {
 
 // AI 配置数据类型（SET 和 GET 共用）
 // SET 时所有字段可选（支持部分更新），GET 时返回完整数据
-export interface AIConfig {
-    apiKey?: string
-    baseURL?: string
-    model?: string
-    thinkingMode?: boolean
-}

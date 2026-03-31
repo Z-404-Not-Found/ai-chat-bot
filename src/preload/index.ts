@@ -1,6 +1,17 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import { IPC_CHANNELS, IPC_SEND, AIConfig } from '../shared/constants'
+import { IPC_CHANNELS, IPC_SEND } from '../shared/constants'
+import type {
+    AIConfig,
+    Character,
+    Conversation,
+    Message,
+    CreateCharacterInput,
+    UpdateCharacterInput,
+    CreateConversationInput,
+    UpdateConversationInput,
+    CreateMessageInput
+} from '../shared/types'
 
 // 允许调用的 IPC 通道白名单
 const ALLOWED_INVOKE_CHANNELS = [
@@ -8,7 +19,20 @@ const ALLOWED_INVOKE_CHANNELS = [
     IPC_CHANNELS.AI_CONFIG_GET,
     IPC_CHANNELS.AI_CHAT_CREATE,
     IPC_CHANNELS.AI_CHAT_STREAM_START,
-    IPC_CHANNELS.AI_STREAM_CANCEL
+    IPC_CHANNELS.AI_STREAM_CANCEL,
+    IPC_CHANNELS.CHARACTER_LIST,
+    IPC_CHANNELS.CHARACTER_GET,
+    IPC_CHANNELS.CHARACTER_CREATE,
+    IPC_CHANNELS.CHARACTER_UPDATE,
+    IPC_CHANNELS.CHARACTER_DELETE,
+    IPC_CHANNELS.CONVERSATION_LIST,
+    IPC_CHANNELS.CONVERSATION_GET,
+    IPC_CHANNELS.CONVERSATION_CREATE,
+    IPC_CHANNELS.CONVERSATION_UPDATE,
+    IPC_CHANNELS.CONVERSATION_DELETE,
+    IPC_CHANNELS.MESSAGE_LIST,
+    IPC_CHANNELS.MESSAGE_CREATE,
+    IPC_CHANNELS.MESSAGE_DELETE
 ] as const
 
 // 允许接收的 IPC 通道白名单 (用于订阅)
@@ -41,8 +65,8 @@ const api = {
         return ipcRenderer.invoke(IPC_CHANNELS.AI_CONFIG_GET) as Promise<AIConfig>
     },
 
-    sendMessageStream: (content: string): void => {
-        ipcRenderer.invoke(IPC_CHANNELS.AI_CHAT_STREAM_START, [{ role: 'user', content }])
+    sendMessageStream: (conversationId: string, content: string): void => {
+        ipcRenderer.invoke(IPC_CHANNELS.AI_CHAT_STREAM_START, { conversationId, content })
     },
 
     cancelStream: (requestId: string): void => {
@@ -78,6 +102,78 @@ const api = {
                 ipcRenderer.removeListener(IPC_SEND.STREAM_END, handler)
             }
         }
+    },
+
+    // Character 角色
+    getCharacters: (): Promise<Character[]> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.CHARACTER_LIST) as Promise<Character[]>
+    },
+
+    getCharacter: (id: string): Promise<Character | null> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.CHARACTER_GET, id) as Promise<Character | null>
+    },
+
+    createCharacter: (input: CreateCharacterInput): Promise<Character> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.CHARACTER_CREATE, input) as Promise<Character>
+    },
+
+    updateCharacter: (id: string, input: UpdateCharacterInput): Promise<Character | null> => {
+        return ipcRenderer.invoke(
+            IPC_CHANNELS.CHARACTER_UPDATE,
+            id,
+            input
+        ) as Promise<Character | null>
+    },
+
+    deleteCharacter: (id: string): Promise<{ success: boolean }> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.CHARACTER_DELETE, id) as Promise<{
+            success: boolean
+        }>
+    },
+
+    // Conversation 对话
+    getConversations: (characterId: string): Promise<Conversation[]> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.CONVERSATION_LIST, characterId) as Promise<
+            Conversation[]
+        >
+    },
+
+    getConversation: (id: string): Promise<Conversation | null> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.CONVERSATION_GET, id) as Promise<Conversation | null>
+    },
+
+    createConversation: (input: CreateConversationInput): Promise<Conversation> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.CONVERSATION_CREATE, input) as Promise<Conversation>
+    },
+
+    updateConversation: (
+        id: string,
+        input: UpdateConversationInput
+    ): Promise<Conversation | null> => {
+        return ipcRenderer.invoke(
+            IPC_CHANNELS.CONVERSATION_UPDATE,
+            id,
+            input
+        ) as Promise<Conversation | null>
+    },
+
+    deleteConversation: (id: string): Promise<{ success: boolean }> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.CONVERSATION_DELETE, id) as Promise<{
+            success: boolean
+        }>
+    },
+
+    // Message 消息
+    getMessages: (conversationId: string): Promise<Message[]> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.MESSAGE_LIST, conversationId) as Promise<Message[]>
+    },
+
+    createMessage: (input: CreateMessageInput): Promise<Message> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.MESSAGE_CREATE, input) as Promise<Message>
+    },
+
+    deleteMessage: (id: string): Promise<{ success: boolean }> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.MESSAGE_DELETE, id) as Promise<{ success: boolean }>
     }
 }
 

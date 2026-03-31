@@ -255,7 +255,7 @@ function sendMessage(): void {
     streamingContent.value = ''
     currentRequestId.value = `stream_${Date.now()}`
 
-    window.api.sendMessageStream(content)
+    // window.api.sendMessageStream(content)
 }
 
 function stopStream(): void {
