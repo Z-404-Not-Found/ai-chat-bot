@@ -59,3 +59,58 @@ export function initUserData(): void {
         writeData({})
     }
 }
+
+// 嵌套对象操作：使用点号链式操作，如 'ai.model'
+export function getObject<T>(key: string, defaultValue?: T): T | undefined {
+    const data = readData()
+    const keys = key.split('.')
+    let current: unknown = data
+
+    for (const k of keys) {
+        if (
+            current &&
+            typeof current === 'object' &&
+            Object.prototype.hasOwnProperty.call(current, k)
+        ) {
+            current = (current as Record<string, unknown>)[k]
+        } else {
+            return defaultValue
+        }
+    }
+    return current as T
+}
+
+// 嵌套对象操作：使用点号链式操作，如 'ai.model'
+export function setObject<T>(key: string, value: T): void {
+    const data = readData()
+    const keys = key.split('.')
+    let current: Record<string, unknown> = data
+
+    for (let i = 0; i < keys.length - 1; i++) {
+        const k = keys[i]
+        if (!Object.prototype.hasOwnProperty.call(current, k) || typeof current[k] !== 'object') {
+            current[k] = {}
+        }
+        current = current[k] as Record<string, unknown>
+    }
+
+    current[keys[keys.length - 1]] = value
+    writeData(data)
+}
+
+// 嵌套对象操作：使用点号链式操作，如 'ai.model'
+export function removeObject(key: string): void {
+    const data = readData()
+    const keys = key.split('.')
+    let current: Record<string, unknown> = data
+
+    for (let i = 0; i < keys.length - 1; i++) {
+        if (!Object.prototype.hasOwnProperty.call(current, keys[i])) {
+            return
+        }
+        current = current[keys[i]] as Record<string, unknown>
+    }
+
+    delete current[keys[keys.length - 1]]
+    writeData(data)
+}

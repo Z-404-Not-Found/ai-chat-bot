@@ -1,8 +1,11 @@
 /// <reference types="vite/client" />
 
+import type { AIConfig } from '@shared/constants'
+
+// Chat API 接口 - 暴露给渲染进程
 interface ChatAPI {
-    setApiKey(key: string): Promise<void>
-    setBaseURL(url: string): Promise<void>
+    setConfig(data: AIConfig): Promise<void>
+    getConfig(): Promise<AIConfig>
     sendMessageStream(content: string): void
     cancelStream(requestId: string): void
     onStreamChunk(callback: (chunk: string) => void): () => void

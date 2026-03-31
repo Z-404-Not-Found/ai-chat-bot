@@ -20,6 +20,25 @@
                     {{ saving ? 'Saving...' : 'Save' }}
                 </button>
             </div>
+            <div class="config-row">
+                <label>Model:</label>
+                <input
+                    v-model="selectedModel"
+                    type="text"
+                    placeholder="e.g. gpt-4o-mini, o1"
+                    class="input"
+                />
+                <button :disabled="saving" @click="saveModel">
+                    {{ saving ? 'Saving...' : 'Save' }}
+                </button>
+            </div>
+            <div class="config-row">
+                <label>Thinking Mode:</label>
+                <label class="checkbox-label">
+                    <input v-model="thinkingMode" type="checkbox" class="checkbox" />
+                    <span>Enable reasoning (for o1/o3 models)</span>
+                </label>
+            </div>
             <div v-if="configMessage" class="message" :class="configMessage.type">
                 {{ configMessage.text }}
             </div>
@@ -27,12 +46,39 @@
 
         <div class="chat-area">
             <div ref="messagesRef" class="messages">
-                <div v-if="messages.length === 0 && !streamingContent" class="placeholder">
+                <div
+                    v-if="messages.length === 0 && !streamingContent && !streamingReasoning"
+                    class="placeholder"
+                >
                     Start a conversation...
                 </div>
                 <div v-for="(msg, i) in messages" :key="i" class="message-row" :class="msg.role">
                     <div class="message-role">{{ msg.role === 'user' ? 'You' : 'AI' }}</div>
-                    <div class="message-content">{{ msg.content }}</div>
+                    <!-- 有思考内容时分开显示 -->
+                    <template v-if="msg.reasoning">
+                        <div class="reasoning-section">
+                            <div class="reasoning-header" @click="toggleReasoning(i)">
+                                <span class="reasoning-icon">{{
+                                    expandedReasoning === i ? '▼' : '▶'
+                                }}</span>
+                                <span>Thinking ({{ msg.reasoning.length }} chars)</span>
+                            </div>
+                            <div v-if="expandedReasoning === i" class="reasoning-content">
+                                {{ msg.reasoning }}
+                            </div>
+                        </div>
+                        <div class="message-content">{{ msg.content }}</div>
+                    </template>
+                    <template v-else>
+                        <div class="message-content">{{ msg.content }}</div>
+                    </template>
+                </div>
+                <!-- 流式输出显示 -->
+                <div v-if="streamingReasoning" class="message-row assistant">
+                    <div class="message-role">AI · Thinking</div>
+                    <div class="reasoning-content">
+                        {{ streamingReasoning }}<span class="streaming-dot">...</span>
+                    </div>
                 </div>
                 <div v-if="streamingContent" class="message-row assistant">
                     <div class="message-role">AI</div>
@@ -70,14 +116,23 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 interface Message {
     role: 'user' | 'assistant'
     content: string
+    reasoning?: string // 思考过程（o1/o3等模型）
 }
 
 const apiKey = ref('')
 const baseURL = ref('')
+const selectedModel = ref('gpt-4o-mini')
+const thinkingMode = ref(false)
 const inputText = ref('')
 const messages = ref<Message[]>([])
 const streamingContent = ref('')
+const streamingReasoning = ref('') // 思考内容（流式）
 const streaming = ref(false)
+const expandedReasoning = ref<number | null>(null) // 当前展开的思考内容索引
+
+function toggleReasoning(index: number): void {
+    expandedReasoning.value = expandedReasoning.value === index ? null : index
+}
 const error = ref('')
 const saving = ref(false)
 const configMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -87,23 +142,47 @@ const messagesRef = ref<HTMLElement | null>(null)
 let removeChunkListener: (() => void) | null = null
 let removeEndListener: (() => void) | null = null
 
-onMounted(() => {
+onMounted(async () => {
+    // Load saved settings from userData
+    try {
+        const settings = await window.api.getConfig()
+        baseURL.value = settings.baseURL ?? ''
+        selectedModel.value = settings.model ?? 'gpt-4o-mini'
+        thinkingMode.value = settings.thinkingMode ?? false
+        // apiKey is not loaded back for security reasons - user must re-enter
+    } catch (e) {
+        console.error('Failed to load settings:', e)
+    }
+
     removeChunkListener = window.api.onStreamChunk((chunk) => {
-        streamingContent.value += chunk
+        if (thinkingMode.value) {
+            // 思考模式：内容作为思考过程
+            streamingReasoning.value += chunk
+        } else {
+            // 普通模式：内容直接作为回答
+            streamingContent.value += chunk
+        }
         scrollToBottom()
     })
 
     removeEndListener = window.api.onStreamEnd((err) => {
         if (err) {
             error.value = err
-        } else if (streamingContent.value) {
-            messages.value.push({
-                role: 'assistant',
-                content: streamingContent.value
-            })
+        } else {
+            const finalContent = streamingContent.value
+            const finalReasoning = streamingReasoning.value
+
+            if (finalContent || finalReasoning) {
+                messages.value.push({
+                    role: 'assistant',
+                    content: finalContent || finalReasoning,
+                    reasoning: thinkingMode.value ? finalReasoning : undefined
+                })
+            }
         }
         streaming.value = false
         streamingContent.value = ''
+        streamingReasoning.value = ''
         currentRequestId.value = null
         scrollToBottom()
     })
@@ -128,7 +207,7 @@ async function saveApiKey(): Promise<void> {
     configMessage.value = null
     error.value = ''
     try {
-        await window.api.setApiKey(apiKey.value.trim())
+        await window.api.setConfig({ apiKey: apiKey.value.trim() })
         configMessage.value = { type: 'success', text: 'API key saved' }
     } catch (e) {
         configMessage.value = { type: 'error', text: String(e) }
@@ -142,8 +221,22 @@ async function saveBaseURL(): Promise<void> {
     configMessage.value = null
     error.value = ''
     try {
-        await window.api.setBaseURL(baseURL.value.trim())
+        await window.api.setConfig({ baseURL: baseURL.value.trim() })
         configMessage.value = { type: 'success', text: 'Base URL saved' }
+    } catch (e) {
+        configMessage.value = { type: 'error', text: String(e) }
+    } finally {
+        saving.value = false
+    }
+}
+
+async function saveModel(): Promise<void> {
+    saving.value = true
+    configMessage.value = null
+    error.value = ''
+    try {
+        await window.api.setConfig({ model: selectedModel.value, thinkingMode: thinkingMode.value })
+        configMessage.value = { type: 'success', text: 'Model settings saved' }
     } catch (e) {
         configMessage.value = { type: 'error', text: String(e) }
     } finally {
@@ -212,6 +305,29 @@ function stopStream(): void {
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 14px;
+}
+
+.select {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    background: white;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    flex: 1;
+}
+
+.checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
 }
 
 .textarea {
@@ -324,5 +440,55 @@ button:disabled {
 .message.error {
     background: #f8d7da;
     color: #721c24;
+}
+
+.reasoning-section {
+    margin-bottom: 8px;
+}
+
+.reasoning-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #888;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.reasoning-header:hover {
+    color: #666;
+}
+
+.reasoning-icon {
+    font-size: 10px;
+}
+
+.reasoning-content {
+    background: #f0f0f0;
+    border-left: 3px solid #888;
+    padding: 8px 12px;
+    margin: 4px 0;
+    font-size: 13px;
+    color: #555;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.5;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.streaming-dot {
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
 }
 </style>
