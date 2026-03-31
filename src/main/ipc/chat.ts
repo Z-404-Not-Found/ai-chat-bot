@@ -6,6 +6,8 @@ import logger from '../utils/logger'
 import { IPC_CHANNELS, IPC_SEND } from '../../shared/constants'
 import { AI_KEYS, DEFAULT_MODEL, DEFAULT_THINKING, DEFAULT_CONTEXT_COUNT } from './aiConfig'
 import { getMessagesByConversationId } from '../database/messages'
+import { getConversationById } from '../database/conversations'
+import { getCharacterById } from '../database/characters'
 
 // 存储活动中的流，用于取消请求
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,15 +22,25 @@ export function registerChatIpcHandlers(): void {
             const thinkingMode = getObject<boolean>(AI_KEYS.THINKING_MODE) ?? DEFAULT_THINKING
             const contextCount = getObject<number>(AI_KEYS.CONTEXT_COUNT) ?? DEFAULT_CONTEXT_COUNT
 
+            // 获取角色 system prompt
+            const conversation = getConversationById(request.conversationId)
+            const messages: ChatMessage[] = []
+            if (conversation) {
+                const character = getCharacterById(conversation.character_id)
+                if (character?.system_prompt) {
+                    messages.push({ role: 'system', content: character.system_prompt })
+                }
+            }
+
             // 获取历史消息
             const history = getMessagesByConversationId(request.conversationId)
             const recentHistory = history.slice(-contextCount)
-
-            // 构建完整消息列表
-            const messages: ChatMessage[] = recentHistory.map((msg) => ({
-                role: msg.role as 'user' | 'assistant' | 'system',
-                content: msg.content
-            }))
+            recentHistory.forEach((msg) => {
+                messages.push({
+                    role: msg.role as 'user' | 'assistant' | 'system',
+                    content: msg.content
+                })
+            })
             messages.push({ role: 'user', content: request.content })
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -58,15 +70,25 @@ export function registerChatIpcHandlers(): void {
             const thinkingMode = getObject<boolean>(AI_KEYS.THINKING_MODE) ?? DEFAULT_THINKING
             const contextCount = getObject<number>(AI_KEYS.CONTEXT_COUNT) ?? DEFAULT_CONTEXT_COUNT
 
+            // 获取角色 system prompt
+            const conversation = getConversationById(request.conversationId)
+            const messages: ChatMessage[] = []
+            if (conversation) {
+                const character = getCharacterById(conversation.character_id)
+                if (character?.system_prompt) {
+                    messages.push({ role: 'system', content: character.system_prompt })
+                }
+            }
+
             // 获取历史消息
             const history = getMessagesByConversationId(request.conversationId)
             const recentHistory = history.slice(-contextCount)
-
-            // 构建完整消息列表
-            const messages: ChatMessage[] = recentHistory.map((msg) => ({
-                role: msg.role as 'user' | 'assistant' | 'system',
-                content: msg.content
-            }))
+            recentHistory.forEach((msg) => {
+                messages.push({
+                    role: msg.role as 'user' | 'assistant' | 'system',
+                    content: msg.content
+                })
+            })
             messages.push({ role: 'user', content: request.content })
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -83,6 +105,12 @@ export function registerChatIpcHandlers(): void {
             // 存储流以便后续取消
             activeStreams.set(requestId, stream)
 
+            // 立即把 requestId 发给 renderer
+            const winRef = BrowserWindow.fromWebContents(event.sender)
+            if (winRef && !winRef.isDestroyed()) {
+                winRef.webContents.send(IPC_SEND.STREAM_START, { requestId })
+            }
+
             for await (const chunk of stream) {
                 // 检查流是否已被取消
                 if (!activeStreams.has(requestId)) break
@@ -93,7 +121,11 @@ export function registerChatIpcHandlers(): void {
                 // 发送内容块
                 const content = chunk.choices[0]?.delta?.content
                 if (content) {
-                    winRef.webContents.send(IPC_SEND.STREAM_CHUNK, { content, requestId })
+                    winRef.webContents.send(IPC_SEND.STREAM_CHUNK, {
+                        content,
+                        type: 'content',
+                        requestId
+                    })
                 }
 
                 // 如果存在推理内容则发送
@@ -101,6 +133,7 @@ export function registerChatIpcHandlers(): void {
                 if (reasoningContent) {
                     winRef.webContents.send(IPC_SEND.STREAM_CHUNK, {
                         content: reasoningContent,
+                        type: 'reasoning',
                         requestId
                     })
                 }
@@ -131,11 +164,13 @@ export function registerChatIpcHandlers(): void {
         return { started: true, requestId }
     })
 
+    //TODO：完善流返回值，取消逻辑
+
     // 取消流
     ipcMain.handle(IPC_CHANNELS.AI_STREAM_CANCEL, async (_, requestId: string) => {
         const stream = activeStreams.get(requestId)
         if (stream) {
-            stream.controller.abort()
+            stream.abort()
             activeStreams.delete(requestId)
             logger.info('流已取消:', requestId)
         }

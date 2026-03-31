@@ -20,9 +20,15 @@ declare global {
             getConfig: () => Promise<AIConfig>
 
             // AI 聊天
-            sendMessageStream: (conversationId: string, content: string) => void
+            sendMessageStream: (
+                conversationId: string,
+                content: string
+            ) => Promise<{ started: boolean; requestId: string }>
             cancelStream: (requestId: string) => void
-            onStreamChunk: (callback: (chunk: string) => void) => () => void
+            onStreamStart: (callback: (requestId: string) => void) => () => void
+            onStreamChunk: (
+                callback: (chunk: string, type?: 'content' | 'reasoning') => void
+            ) => () => void
             onStreamEnd: (callback: (error?: string) => void) => () => void
 
             // Character 角色

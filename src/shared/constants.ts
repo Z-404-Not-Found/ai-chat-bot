@@ -34,6 +34,7 @@ export const IPC_CHANNELS = {
 
 // IPC Send 通道 (main → renderer 通过 webContents.send)
 export const IPC_SEND = {
+    STREAM_START: 'ai:stream:start',
     STREAM_CHUNK: 'ai:stream:chunk',
     STREAM_END: 'ai:stream:end'
 } as const

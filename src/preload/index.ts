@@ -36,7 +36,11 @@ const ALLOWED_INVOKE_CHANNELS = [
 ] as const
 
 // 允许接收的 IPC 通道白名单 (用于订阅)
-const ALLOWED_RECEIVE_CHANNELS = [IPC_SEND.STREAM_CHUNK, IPC_SEND.STREAM_END] as const
+const ALLOWED_RECEIVE_CHANNELS = [
+    IPC_SEND.STREAM_START,
+    IPC_SEND.STREAM_CHUNK,
+    IPC_SEND.STREAM_END
+] as const
 
 type AllowedInvokeChannel = (typeof ALLOWED_INVOKE_CHANNELS)[number]
 type AllowedReceiveChannel = (typeof ALLOWED_RECEIVE_CHANNELS)[number]
@@ -65,8 +69,14 @@ const api = {
         return ipcRenderer.invoke(IPC_CHANNELS.AI_CONFIG_GET) as Promise<AIConfig>
     },
 
-    sendMessageStream: (conversationId: string, content: string): void => {
-        ipcRenderer.invoke(IPC_CHANNELS.AI_CHAT_STREAM_START, { conversationId, content })
+    sendMessageStream: (
+        conversationId: string,
+        content: string
+    ): Promise<{ started: boolean; requestId: string }> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.AI_CHAT_STREAM_START, {
+            conversationId,
+            content
+        }) as Promise<{ started: boolean; requestId: string }>
     },
 
     cancelStream: (requestId: string): void => {
@@ -76,9 +86,28 @@ const api = {
         ipcRenderer.invoke(IPC_CHANNELS.AI_STREAM_CANCEL, requestId)
     },
 
-    onStreamChunk: (callback: (chunk: string) => void): (() => void) => {
-        const handler = (_: Electron.IpcRendererEvent, data: { content: string }): void => {
-            callback(data.content)
+    onStreamStart: (callback: (requestId: string) => void): (() => void) => {
+        const handler = (_: Electron.IpcRendererEvent, data: { requestId: string }): void => {
+            callback(data.requestId)
+        }
+        if (validateReceiveChannel(IPC_SEND.STREAM_START)) {
+            ipcRenderer.on(IPC_SEND.STREAM_START, handler)
+        }
+        return (): void => {
+            if (validateReceiveChannel(IPC_SEND.STREAM_START)) {
+                ipcRenderer.removeListener(IPC_SEND.STREAM_START, handler)
+            }
+        }
+    },
+
+    onStreamChunk: (
+        callback: (chunk: string, type?: 'content' | 'reasoning') => void
+    ): (() => void) => {
+        const handler = (
+            _: Electron.IpcRendererEvent,
+            data: { content: string; type?: 'content' | 'reasoning' }
+        ): void => {
+            callback(data.content, data.type)
         }
         if (validateReceiveChannel(IPC_SEND.STREAM_CHUNK)) {
             ipcRenderer.on(IPC_SEND.STREAM_CHUNK, handler)

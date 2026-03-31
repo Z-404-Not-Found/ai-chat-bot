@@ -89,6 +89,7 @@ export interface ChatRequest {
 // IPC 流式事件数据
 export interface StreamChunkData {
     content: string
+    type?: 'content' | 'reasoning'
     requestId?: string
 }
 
