@@ -182,18 +182,6 @@ HAVING COUNT(orders.id) > 5
 ORDER BY order_count DESC;
 \`\`\`
 
-### Code Block (Go)
-\`\`\`go
-package main
-
-import "fmt"
-
-func main() {
-    message := "Hello, World!"
-    fmt.Println(message)
-}
-\`\`\`
-
 ## Tables
 
 | Name | Role | Department |

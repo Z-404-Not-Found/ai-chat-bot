@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { initUserData } from './utils/userData'
+// import { initDatabase } from './database'
 import { registerIpcHandlers } from './ipc'
 
 function createWindow(): void {
@@ -45,6 +46,8 @@ app.whenReady().then(() => {
 
     // 初始化用户目录和数据
     initUserData()
+    // 初始化数据库
+    // initDatabase()
 
     // 注册 IPC handlers
     registerIpcHandlers()

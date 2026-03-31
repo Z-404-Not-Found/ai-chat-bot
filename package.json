@@ -27,7 +27,8 @@
         "better-sqlite3": "^12.8.0",
         "electron-log": "^5.4.3",
         "electron-updater": "^6.3.9",
-        "openai": "^6.33.0"
+        "openai": "^6.33.0",
+        "uuid": "^13.0.0"
     },
     "devDependencies": {
         "@electron-toolkit/eslint-config-prettier": "3.0.0",
@@ -36,7 +37,9 @@
         "@primeuix/themes": "^2.0.3",
         "@primevue/auto-import-resolver": "^4.5.4",
         "@tailwindcss/vite": "^4.2.2",
+        "@types/better-sqlite3": "^7.6.13",
         "@types/node": "^22.19.1",
+        "@types/uuid": "^11.0.0",
         "@vitejs/plugin-vue": "^6.0.2",
         "@zumer/snapdom": "^2.7.0",
         "dompurify": "^3.3.3",
@@ -66,6 +69,7 @@
     },
     "pnpm": {
         "onlyBuiltDependencies": [
+            "better-sqlite3",
             "electron",
             "esbuild"
         ],
