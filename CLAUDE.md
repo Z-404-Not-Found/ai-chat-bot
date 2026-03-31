@@ -25,7 +25,7 @@ pnpm typecheck    # TypeScript checks (node + web)
 ### Electron Process Model
 
 - **Main Process** (`src/main/index.ts`): Electron window creation, IPC handlers, system integration
-- **Preload Script** (`src/preload/index.ts`): Context bridge exposing safe APIs to renderer via `contextBridge`
+- **Preload Script** (`src/preload/index.ts`): Context bridge exposing safe APIs to renderer via `contextBridge`. All IPC channels are whitelisted via `AllowedInvokeChannels` and `AllowedReceiveChannels` type guards
 - **Renderer Process** (`src/renderer/`): Vue 3 SPA frontend
 
 ### IPC Communication Pattern
@@ -37,6 +37,8 @@ Main process uses `@electron-toolkit/utils` for window management and IPC:
 mainWindow.webContents.send('channel', data)
 // Main process receives from renderer via ipcMain.handle
 ```
+
+**Channel naming convention**: Uses `domain:resource:action` pattern (e.g., `ai:config:set`, `ai:chat:stream-start`). Invoke channels (`ipcMain.handle`) go in `IPC_CHANNELS`, send channels (`webContents.send`) go in `IPC_SEND`.
 
 ### Build Tooling
 
@@ -55,6 +57,8 @@ mainWindow.webContents.send('channel', data)
 
 - **better-sqlite3**: Local SQLite for chat history
 - **pg**: PostgreSQL client for remote sync
+
+**Schema design**: Tables use soft delete (`deleted` INTEGER flag) and `sync_status` for change tracking. Foreign key cascades on delete. Tables: `characters`, `conversations`, `messages`.
 
 ## Key Files
 
