@@ -33,6 +33,7 @@ interface ThemeConfig {
 interface UseThemeReturn {
     currentPreset: ReturnType<typeof ref<ThemePreset>>
     currentThemeMode: ReturnType<typeof ref<ThemeMode>>
+    isDark: ReturnType<typeof ref<boolean>>
     presetOptions: { label: string; value: ThemePreset }[]
     modeOptions: { label: string; value: ThemeMode; icon: string }[]
     setPreset: (preset: ThemePreset) => void
@@ -153,6 +154,7 @@ export function useTheme(): UseThemeReturn {
     return {
         currentPreset,
         currentThemeMode,
+        isDark,
         presetOptions,
         modeOptions,
         setPreset,
