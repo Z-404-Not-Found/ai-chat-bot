@@ -49,6 +49,13 @@ declare global {
             getMessages: (conversationId: string) => Promise<Message[]>
             createMessage: (input: CreateMessageInput) => Promise<Message>
             deleteMessage: (id: string) => Promise<{ success: boolean }>
+
+            // Window 窗口控制
+            minimize: () => Promise<{ success: boolean }>
+            maximize: () => Promise<{ success: boolean; isMaximized?: boolean }>
+            close: () => Promise<{ success: boolean }>
+            isMaximized: () => Promise<{ isMaximized: boolean }>
+            getPlatform: () => Promise<{ platform: 'darwin' | 'win32' | 'linux' }>
         }
     }
 }

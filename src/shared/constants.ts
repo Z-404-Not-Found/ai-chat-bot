@@ -29,7 +29,14 @@ export const IPC_CHANNELS = {
     // Message 消息
     MESSAGE_LIST: 'message:list',
     MESSAGE_CREATE: 'message:create',
-    MESSAGE_DELETE: 'message:delete'
+    MESSAGE_DELETE: 'message:delete',
+
+    // Window 窗口控制
+    WINDOW_MINIMIZE: 'window:minimize',
+    WINDOW_MAXIMIZE: 'window:maximize',
+    WINDOW_CLOSE: 'window:close',
+    WINDOW_IS_MAXIMIZED: 'window:is-maximized',
+    WINDOW_GET_PLATFORM: 'window:get-platform'
 } as const
 
 // IPC Send 通道 (main → renderer 通过 webContents.send)

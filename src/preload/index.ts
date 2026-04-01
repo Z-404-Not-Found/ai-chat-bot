@@ -32,7 +32,12 @@ const ALLOWED_INVOKE_CHANNELS = [
     IPC_CHANNELS.CONVERSATION_DELETE,
     IPC_CHANNELS.MESSAGE_LIST,
     IPC_CHANNELS.MESSAGE_CREATE,
-    IPC_CHANNELS.MESSAGE_DELETE
+    IPC_CHANNELS.MESSAGE_DELETE,
+    IPC_CHANNELS.WINDOW_MINIMIZE,
+    IPC_CHANNELS.WINDOW_MAXIMIZE,
+    IPC_CHANNELS.WINDOW_CLOSE,
+    IPC_CHANNELS.WINDOW_IS_MAXIMIZED,
+    IPC_CHANNELS.WINDOW_GET_PLATFORM
 ] as const
 
 // 允许接收的 IPC 通道白名单 (用于订阅)
@@ -200,6 +205,34 @@ const api = {
 
     deleteMessage: (id: string): Promise<{ success: boolean }> => {
         return ipcRenderer.invoke(IPC_CHANNELS.MESSAGE_DELETE, id) as Promise<{ success: boolean }>
+    },
+
+    // Window 窗口控制
+    minimize: (): Promise<{ success: boolean }> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.WINDOW_MINIMIZE) as Promise<{ success: boolean }>
+    },
+
+    maximize: (): Promise<{ success: boolean; isMaximized?: boolean }> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.WINDOW_MAXIMIZE) as Promise<{
+            success: boolean
+            isMaximized?: boolean
+        }>
+    },
+
+    close: (): Promise<{ success: boolean }> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.WINDOW_CLOSE) as Promise<{ success: boolean }>
+    },
+
+    isMaximized: (): Promise<{ isMaximized: boolean }> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.WINDOW_IS_MAXIMIZED) as Promise<{
+            isMaximized: boolean
+        }>
+    },
+
+    getPlatform: (): Promise<{ platform: 'darwin' | 'win32' | 'linux' }> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.WINDOW_GET_PLATFORM) as Promise<{
+            platform: 'darwin' | 'win32' | 'linux'
+        }>
     }
 }
 
