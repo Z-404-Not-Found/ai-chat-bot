@@ -19,7 +19,7 @@ import DOMPurify from 'dompurify'
 import 'highlight.js/styles/github.css'
 import 'github-markdown-css/github-markdown.css'
 
-// Dark mode detection
+// 暗色模式检测
 const isDarkMode = ref(false)
 
 function updateDarkMode(): void {
@@ -38,16 +38,16 @@ onUnmounted(() => {
 })
 
 watch(isDarkMode, () => {
-    // Re-render content when dark mode changes
+    // 暗色模式变化时重新渲染内容
 })
 
-// Configure marked with highlight.js
+// 配置 marked 使用 highlight.js
 marked.setOptions({
     gfm: true,
     breaks: true
 })
 
-// Custom renderer for code blocks with highlight.js
+// 自定义代码块渲染器，使用 highlight.js
 const renderer = {
     code({ text, lang }: { text: string; lang?: string }): string {
         const language = lang && hljs.getLanguage(lang) ? lang : 'plaintext'
@@ -58,7 +58,7 @@ const renderer = {
 
 marked.use({ renderer })
 
-// Comprehensive markdown test content
+// 完整的 markdown 测试内容
 const markdownContent = `
 # Markdown Test Document
 

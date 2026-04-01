@@ -15,7 +15,7 @@ export function getOpenAIClient(): OpenAI {
         const baseURL = getObject<string>(AI_KEYS.BASE_URL)
 
         if (!apiKey) {
-            throw new Error('OpenAI API key not configured')
+            throw new Error('OpenAI API 密钥未配置')
         }
 
         openAIClient = new OpenAI({

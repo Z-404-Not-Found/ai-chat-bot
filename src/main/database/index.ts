@@ -32,20 +32,20 @@ export function getDatabase(): Database.Database {
 export function initDatabase(): void {
     ensureUserDir()
 
-    // Initialize device_id
+    // 初始化设备 ID
     let deviceId = getItem<string>('device_id')
     if (!deviceId) {
         deviceId = uuidv4()
         setItem('device_id', deviceId)
     }
 
-    // Open database
+    // 打开数据库
     db = new Database(DB_PATH)
 
-    // Enable foreign keys
+    // 启用外键约束
     db.pragma('foreign_keys = ON')
 
-    // Create tables
+    // 创建数据表
     db.exec(CREATE_CHARACTERS_TABLE)
     db.exec(CREATE_CONVERSATIONS_TABLE)
     db.exec(CREATE_MESSAGES_TABLE)
