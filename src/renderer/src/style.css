@@ -1,3 +1,6 @@
 @import 'tailwindcss';
 @import 'primeicons/primeicons.css';
 @import 'tailwindcss-primeui';
+
+/* 配置 Tailwind dark mode 使用 .dark class */
+@custom-variant dark (&:where(.dark, .dark *));
