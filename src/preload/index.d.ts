@@ -20,10 +20,7 @@ declare global {
             getConfig: () => Promise<AIConfig>
 
             // AI 聊天
-            sendMessageStream: (
-                conversationId: string,
-                content: string
-            ) => Promise<{ started: boolean; requestId: string }>
+            sendMessageStream: (conversationId: string, content: string) => Promise<void>
             cancelStream: (requestId: string) => void
             onStreamStart: (callback: (requestId: string) => void) => () => void
             onStreamChunk: (

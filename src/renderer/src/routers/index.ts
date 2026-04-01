@@ -6,16 +6,7 @@ const router = createRouter({
         {
             path: '/',
             component: () => import('@renderer/pages/Layout.vue'),
-            children: [
-                // {
-                //     path: 'chat',
-                //     component: () => import('@renderer/pages/ChatDemo.vue')
-                // },
-                {
-                    path: 'markdown',
-                    component: () => import('@renderer/pages/MarkdownDemo.vue')
-                }
-            ]
+            children: []
         }
     ]
 })

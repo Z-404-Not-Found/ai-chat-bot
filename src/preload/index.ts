@@ -69,14 +69,11 @@ const api = {
         return ipcRenderer.invoke(IPC_CHANNELS.AI_CONFIG_GET) as Promise<AIConfig>
     },
 
-    sendMessageStream: (
-        conversationId: string,
-        content: string
-    ): Promise<{ started: boolean; requestId: string }> => {
+    sendMessageStream: (conversationId: string, content: string): Promise<void> => {
         return ipcRenderer.invoke(IPC_CHANNELS.AI_CHAT_STREAM_START, {
             conversationId,
             content
-        }) as Promise<{ started: boolean; requestId: string }>
+        }) as Promise<void>
     },
 
     cancelStream: (requestId: string): void => {

@@ -80,8 +80,10 @@ export function registerChatIpcHandlers(): void {
                 }
             }
 
+            logger.debug('发送流式聊天请求:', request)
             // 获取历史消息
             const history = getMessagesByConversationId(request.conversationId)
+            logger.debug('历史消息:', history)
             const recentHistory = history.slice(-contextCount)
             recentHistory.forEach((msg) => {
                 messages.push({
@@ -97,7 +99,11 @@ export function registerChatIpcHandlers(): void {
             // 思考模式参数由各厂商自行处理
             if (thinkingMode !== undefined) {
                 params.thinking = thinkingMode ? { type: 'enabled' } : { type: 'disabled' }
+                params.extra_body = { thinking: thinkingMode }
+                params.enable_thinking = thinkingMode
             }
+
+            logger.debug('流式聊天参数:', params)
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const stream = (await client.chat.completions.create(params)) as any
@@ -160,11 +166,7 @@ export function registerChatIpcHandlers(): void {
         } finally {
             activeStreams.delete(requestId)
         }
-
-        return { started: true, requestId }
     })
-
-    //TODO：完善流返回值，取消逻辑
 
     // 取消流
     ipcMain.handle(IPC_CHANNELS.AI_STREAM_CANCEL, async (_, requestId: string) => {
