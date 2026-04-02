@@ -33,7 +33,9 @@ export default defineConfig(
                         lang: 'ts'
                     }
                 }
-            ]
+            ],
+            // DOMPurify 已对 v-html 内容进行净化，无需警告
+            'vue/no-v-html': 'off'
         }
     },
     eslintConfigPrettier
