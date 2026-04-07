@@ -259,7 +259,7 @@ watch(() => props.isStreaming, syncCursorPosition, { immediate: true })
 
 /* 主题切换过渡动画 - 使用 PrimeVue 标准曲线 cubic-bezier(0.65, 0, 0.35, 1) */
 .theme-fade {
-    transition: opacity 75ms cubic-bezier(0.65, 0, 0.35, 1);
+    transition: opacity var(--motion-duration-theme) var(--motion-ease-emphasis);
 }
 
 .theme-fade.fading {
@@ -301,7 +301,7 @@ watch(() => props.isStreaming, syncCursorPosition, { immediate: true })
     font-size: 12px;
     cursor: pointer;
     opacity: 0;
-    transition: opacity 0.2s;
+    transition: opacity var(--motion-duration-base) var(--motion-ease-standard);
     z-index: 10;
 }
 
@@ -337,7 +337,7 @@ watch(() => props.isStreaming, syncCursorPosition, { immediate: true })
     pointer-events: none;
     transform-origin: center;
     z-index: 9;
-    transition: opacity 0.12s ease;
+    transition: opacity var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .stream-cursor.dark {
@@ -348,8 +348,8 @@ watch(() => props.isStreaming, syncCursorPosition, { immediate: true })
 .stream-cursor.visible {
     opacity: 1;
     animation:
-        cursor-blink 0.9s steps(1, end) infinite,
-        cursor-glow 0.9s ease-in-out infinite;
+        cursor-blink var(--motion-duration-pulse) steps(1, end) infinite,
+        cursor-glow var(--motion-duration-pulse) ease-in-out infinite;
 }
 
 @keyframes cursor-blink {

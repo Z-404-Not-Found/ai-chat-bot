@@ -4,3 +4,67 @@
 
 /* 配置 Tailwind dark mode 使用 .dark class */
 @custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+    --motion-duration-fast: 120ms;
+    --motion-duration-base: 200ms;
+    --motion-duration-slow: 300ms;
+    --motion-duration-theme: 75ms;
+    --motion-duration-pulse: 900ms;
+
+    --motion-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+    --motion-ease-emphasis: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.motion-all,
+.motion-colors,
+.motion-opacity,
+.motion-transform {
+    transition-duration: var(--motion-duration-base);
+    transition-timing-function: var(--motion-ease-standard);
+}
+
+.motion-all {
+    transition-property: all;
+}
+
+.motion-colors {
+    transition-property:
+        color, background-color, border-color, outline-color, text-decoration-color, fill, stroke;
+}
+
+.motion-opacity {
+    transition-property: opacity;
+}
+
+.motion-transform {
+    transition-property: transform;
+}
+
+.motion-fast {
+    transition-duration: var(--motion-duration-fast);
+}
+
+.motion-slow {
+    transition-duration: var(--motion-duration-slow);
+}
+
+.mobile-drawer-fade-enter-active,
+.mobile-drawer-fade-leave-active {
+    transition: opacity var(--motion-duration-base) var(--motion-ease-standard);
+}
+
+.mobile-drawer-fade-enter-from,
+.mobile-drawer-fade-leave-to {
+    opacity: 0;
+}
+
+.mobile-drawer-slide-enter-active,
+.mobile-drawer-slide-leave-active {
+    transition: transform var(--motion-duration-base) var(--motion-ease-standard);
+}
+
+.mobile-drawer-slide-enter-from,
+.mobile-drawer-slide-leave-to {
+    transform: translateX(-100%);
+}

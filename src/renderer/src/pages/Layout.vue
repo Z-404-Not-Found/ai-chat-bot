@@ -4,7 +4,7 @@
     >
         <div class="flex h-full w-full gap-3">
             <aside
-                class="hidden h-full rounded-2xl border border-surface-200 bg-surface-0 p-3 transition-all duration-300 lg:flex lg:flex-col dark:border-surface-800 dark:bg-surface-900"
+                class="motion-all hidden h-full rounded-2xl border border-surface-200 bg-surface-0 p-3 lg:flex lg:flex-col dark:border-surface-800 dark:bg-surface-900"
                 :class="isSidebarCollapsed ? 'w-18' : 'w-48'"
             >
                 <div class="mb-3 flex h-8 items-center gap-3 rounded-xl px-2">
@@ -26,7 +26,7 @@
                         v-for="item in primaryNavItems"
                         :key="item.path"
                         type="button"
-                        class="group flex items-center justify-center overflow-hidden rounded-xl text-sm transition-colors"
+                        class="motion-all group flex items-center justify-center overflow-hidden rounded-xl text-sm"
                         :class="[
                             isSidebarCollapsed
                                 ? 'mx-auto h-11 w-11 justify-center px-0'
@@ -47,7 +47,7 @@
                 </nav>
                 <button
                     type="button"
-                    class="group mt-2 flex items-center justify-center overflow-hidden rounded-xl text-sm transition-colors"
+                    class="motion-all group mt-2 flex items-center justify-center overflow-hidden rounded-xl text-sm"
                     :class="[
                         isSidebarCollapsed
                             ? 'mx-auto h-11 w-11 justify-center px-0'
@@ -67,7 +67,7 @@
                 </button>
                 <button
                     type="button"
-                    class="mt-2 flex items-center rounded-xl px-3 text-sm text-surface-600 transition-colors hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800"
+                    class="motion-all mt-2 flex items-center rounded-xl px-3 text-sm text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800"
                     :class="
                         isSidebarCollapsed
                             ? 'mx-auto h-11 w-11 justify-center px-0'
@@ -173,7 +173,7 @@
                         v-for="item in navItems"
                         :key="item.path"
                         type="button"
-                        class="flex h-11 w-full items-center rounded-xl px-3 text-sm transition-colors"
+                        class="motion-all flex h-11 w-full items-center rounded-xl px-3 text-sm"
                         :class="
                             isActive(item.path)
                                 ? 'bg-primary text-primary-contrast'
@@ -285,26 +285,6 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.mobile-drawer-fade-enter-active,
-.mobile-drawer-fade-leave-active {
-    transition: opacity 0.2s ease;
-}
-
-.mobile-drawer-fade-enter-from,
-.mobile-drawer-fade-leave-to {
-    opacity: 0;
-}
-
-.mobile-drawer-slide-enter-active,
-.mobile-drawer-slide-leave-active {
-    transition: transform 0.2s ease;
-}
-
-.mobile-drawer-slide-enter-from,
-.mobile-drawer-slide-leave-to {
-    transform: translateX(-100%);
-}
-
 .drag-region {
     -webkit-app-region: drag;
 }
