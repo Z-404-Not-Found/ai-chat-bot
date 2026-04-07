@@ -255,11 +255,12 @@ watch(() => props.isStreaming, syncCursorPosition, { immediate: true })
 <style scoped>
 .markdown-wrapper {
     position: relative;
+    --motion-duration: 200ms;
+    --motion-ease: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
-/* 主题切换过渡动画 - 使用 PrimeVue 标准曲线 cubic-bezier(0.65, 0, 0.35, 1) */
 .theme-fade {
-    transition: opacity var(--motion-duration-theme) var(--motion-ease-emphasis);
+    transition: opacity var(--motion-duration) var(--motion-ease);
 }
 
 .theme-fade.fading {
@@ -301,7 +302,7 @@ watch(() => props.isStreaming, syncCursorPosition, { immediate: true })
     font-size: 12px;
     cursor: pointer;
     opacity: 0;
-    transition: opacity var(--motion-duration-base) var(--motion-ease-standard);
+    transition: opacity var(--motion-duration) var(--motion-ease);
     z-index: 10;
 }
 
@@ -337,7 +338,7 @@ watch(() => props.isStreaming, syncCursorPosition, { immediate: true })
     pointer-events: none;
     transform-origin: center;
     z-index: 9;
-    transition: opacity var(--motion-duration-fast) var(--motion-ease-standard);
+    transition: opacity var(--motion-duration) var(--motion-ease);
 }
 
 .stream-cursor.dark {
@@ -348,8 +349,8 @@ watch(() => props.isStreaming, syncCursorPosition, { immediate: true })
 .stream-cursor.visible {
     opacity: 1;
     animation:
-        cursor-blink var(--motion-duration-pulse) steps(1, end) infinite,
-        cursor-glow var(--motion-duration-pulse) ease-in-out infinite;
+        cursor-blink var(--motion-duration) steps(1, end) infinite,
+        cursor-glow var(--motion-duration) ease-in-out infinite;
 }
 
 @keyframes cursor-blink {

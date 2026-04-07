@@ -1,5 +1,5 @@
 <template>
-    <div class="h-svh w-svw overflow-hidden rounded-xl">
+    <div class="h-svh w-svw overflow-hidden rounded-xl motion-all">
         <RouterView />
     </div>
 </template>

@@ -1,32 +1,32 @@
 <template>
     <div
-        class="h-full w-full overflow-hidden bg-surface-50 p-3 text-surface-900 dark:bg-surface-950 dark:text-surface-50"
+        class="h-full w-full overflow-hidden bg-surface-50 p-3 text-surface-900 dark:bg-surface-950 dark:text-surface-50 transition-motion"
     >
         <div class="flex h-full w-full gap-3">
             <aside
-                class="motion-all hidden h-full rounded-2xl border border-surface-200 bg-surface-0 p-3 lg:flex lg:flex-col dark:border-surface-800 dark:bg-surface-900"
+                class="hidden h-full rounded-2xl border border-surface-200 bg-surface-0 p-3 lg:flex lg:flex-col dark:border-surface-800 dark:bg-surface-900 transition-motion"
                 :class="isSidebarCollapsed ? 'w-18' : 'w-48'"
             >
                 <div class="mb-3 flex h-8 items-center gap-3 rounded-xl px-2">
                     <div
-                        class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary-100 text-primary-700 dark:bg-primary-900/50 dark:text-primary-300"
+                        class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary-100 text-primary-700 dark:bg-primary-950 dark:text-primary-300 transition-motion"
                     >
                         <i class="pi pi-microchip-ai text-sm"></i>
                     </div>
                     <div
                         v-if="!isSidebarCollapsed"
-                        class="truncate whitespace-nowrap text-l font-semibold"
+                        class="truncate whitespace-nowrap text-l font-semibold transition-motion"
                     >
                         AI 聊天助手
                     </div>
                 </div>
-                <div class="my-1 h-px bg-surface-200 dark:bg-surface-800"></div>
+                <div class="my-1 h-px bg-surface-200 dark:bg-surface-800 transition-motion"></div>
                 <nav class="mt-3 flex flex-1 flex-col gap-2">
                     <button
                         v-for="item in primaryNavItems"
                         :key="item.path"
                         type="button"
-                        class="motion-all group flex items-center justify-center overflow-hidden rounded-xl text-sm"
+                        class="group flex items-center justify-center overflow-hidden rounded-xl text-sm transition-motion"
                         :class="[
                             isSidebarCollapsed
                                 ? 'mx-auto h-11 w-11 justify-center px-0'
@@ -47,7 +47,7 @@
                 </nav>
                 <button
                     type="button"
-                    class="motion-all group mt-2 flex items-center justify-center overflow-hidden rounded-xl text-sm"
+                    class="group mt-2 flex items-center justify-center overflow-hidden rounded-xl text-sm transition-motion"
                     :class="[
                         isSidebarCollapsed
                             ? 'mx-auto h-11 w-11 justify-center px-0'
@@ -67,7 +67,7 @@
                 </button>
                 <button
                     type="button"
-                    class="motion-all mt-2 flex items-center rounded-xl px-3 text-sm text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800"
+                    class="mt-2 flex items-center rounded-xl px-3 text-sm text-surface-600 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800 transition-motion"
                     :class="
                         isSidebarCollapsed
                             ? 'mx-auto h-11 w-11 justify-center px-0'
@@ -85,7 +85,7 @@
 
             <div class="min-w-0 flex-1 flex flex-col gap-2">
                 <div
-                    class="flex h-14 items-center rounded-xl border border-surface-200 bg-surface-0 px-3 dark:border-surface-800 dark:bg-surface-900"
+                    class="flex h-14 items-center rounded-xl border border-surface-200 bg-surface-0 px-3 dark:border-surface-800 dark:bg-surface-900 transition-motion"
                 >
                     <Button
                         icon="pi pi-bars"
@@ -94,41 +94,51 @@
                         variant="text"
                         @click="isMobileSidebarOpen = true"
                     />
-                    <div class="ml-2 text-l font-semibold">
+                    <div class="ml-2 text-l font-semibold transition-motion">
                         {{ currentTitle }}
                     </div>
-                    <div
-                        class="mx-2 hidden h-full flex-1 sm:block"
-                        :class="isMac ? '' : 'drag-region'"
-                    ></div>
-                    <div v-if="!isMac" class="no-drag-region ml-auto flex items-center gap-1">
+                    <div class="mx-2 h-full flex-1 block" :class="isMac ? '' : 'drag-region'"></div>
+
+                    <div class="no-drag-region mr-2 flex items-center gap-1">
                         <Button
-                            icon="pi pi-minus"
+                            :icon="themeIcon"
                             class="h-8! w-8! rounded-lg! p-0! hover:bg-surface-100! dark:hover:bg-surface-800!"
                             severity="contrast"
                             variant="text"
-                            @click="minimizeWindow"
+                            :aria-label="`主题: ${themeLabel}`"
+                            @click="cycleTheme"
                         />
-                        <Button
-                            :icon="isMaximized ? 'pi pi-window-minimize' : 'pi pi-window-maximize'"
-                            class="h-8! w-8! rounded-lg! p-0! hover:bg-surface-100! dark:hover:bg-surface-800!"
-                            severity="contrast"
-                            variant="text"
-                            @click="toggleMaximizeWindow"
-                        />
-                        <Button
-                            icon="pi pi-times"
-                            class="h-8! w-8! rounded-lg! p-0! hover:bg-red-500! hover:text-white!"
-                            severity="contrast"
-                            variant="text"
-                            @click="closeWindow"
-                        />
+                        <template v-if="!isMac">
+                            <Button
+                                icon="pi pi-minus"
+                                class="h-8! w-8! rounded-lg! p-0! hover:bg-surface-100! dark:hover:bg-surface-800!"
+                                severity="contrast"
+                                variant="text"
+                                @click="minimizeWindow"
+                            />
+                            <Button
+                                :icon="
+                                    isMaximized ? 'pi pi-window-minimize' : 'pi pi-window-maximize'
+                                "
+                                class="h-8! w-8! rounded-lg! p-0! hover:bg-surface-100! dark:hover:bg-surface-800!"
+                                severity="contrast"
+                                variant="text"
+                                @click="toggleMaximizeWindow"
+                            />
+                            <Button
+                                icon="pi pi-times"
+                                class="h-8! w-8! rounded-lg! p-0! hover:bg-red-500! hover:text-white!"
+                                severity="contrast"
+                                variant="text"
+                                @click="closeWindow"
+                            />
+                        </template>
                     </div>
                 </div>
 
                 <main class="min-h-0 flex-1">
                     <section
-                        class="h-full overflow-hidden rounded-2xl border border-surface-200 bg-surface-0 p-3 dark:border-surface-800 dark:bg-surface-900"
+                        class="h-full overflow-hidden rounded-2xl border border-surface-200 bg-surface-0 p-3 dark:border-surface-800 dark:bg-surface-900 transition-motion"
                     >
                         <div class="h-full overflow-y-auto">
                             <RouterView />
@@ -173,7 +183,7 @@
                         v-for="item in navItems"
                         :key="item.path"
                         type="button"
-                        class="motion-all flex h-11 w-full items-center rounded-xl px-3 text-sm"
+                        class="flex h-11 w-full items-center rounded-xl px-3 text-sm"
                         :class="
                             isActive(item.path)
                                 ? 'bg-primary text-primary-contrast'
@@ -193,6 +203,28 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useTheme } from '@renderer/composables/useTheme'
+import type { ThemeMode } from '@renderer/themes/myPreset'
+
+const { currentThemeMode, modeOptions, setThemeMode } = useTheme()
+
+// 主题切换
+const themeIcon = computed(() => {
+    const option = modeOptions.find((o) => o.value === currentThemeMode.value)
+    return option?.icon ?? 'pi pi-desktop'
+})
+
+const themeLabel = computed(() => {
+    const option = modeOptions.find((o) => o.value === currentThemeMode.value)
+    return option?.label ?? '系统'
+})
+
+const cycleTheme = (): void => {
+    const modes: ThemeMode[] = ['light', 'dark', 'system']
+    const currentIndex = modes.indexOf(currentThemeMode.value as ThemeMode)
+    const nextIndex = (currentIndex + 1) % modes.length
+    setThemeMode(modes[nextIndex])
+}
 
 type NavItem = {
     path: '/chat' | '/role' | '/setting'
@@ -291,5 +323,25 @@ onBeforeUnmount(() => {
 
 .no-drag-region {
     -webkit-app-region: no-drag;
+}
+
+.mobile-drawer-fade-enter-active,
+.mobile-drawer-fade-leave-active {
+    transition: opacity var(--motion-duration) var(--motion-ease);
+}
+
+.mobile-drawer-fade-enter-from,
+.mobile-drawer-fade-leave-to {
+    opacity: 0;
+}
+
+.mobile-drawer-slide-enter-active,
+.mobile-drawer-slide-leave-active {
+    transition: transform var(--motion-duration) var(--motion-ease);
+}
+
+.mobile-drawer-slide-enter-from,
+.mobile-drawer-slide-leave-to {
+    transform: translateX(-100%);
 }
 </style>
