@@ -1,13 +1,22 @@
 <template>
-    <div
-        class="markdown-body theme-fade"
-        :class="[props.isDark ? 'dark' : 'light', { fading: isTransitioning }]"
-        v-html="renderedContent"
-    ></div>
+    <div class="markdown-wrapper">
+        <div
+            ref="containerRef"
+            class="markdown-body theme-fade"
+            :class="[props.isDark ? 'dark' : 'light', { fading: isTransitioning }]"
+            v-html="renderedContent"
+        ></div>
+        <span
+            class="stream-cursor"
+            :class="{ visible: isCursorVisible, dark: !!props.isDark }"
+            :style="cursorStyle"
+            aria-hidden="true"
+        ></span>
+    </div>
 </template>
 
 <script setup lang="ts">
-import { computed, watch, ref } from 'vue'
+import { computed, watch, ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
 import DOMPurify from 'dompurify'
@@ -26,11 +35,19 @@ import markdownDark from 'github-markdown-css/github-markdown-dark.css?url'
 
 // 主题切换过渡状态
 const isTransitioning = ref(false)
+const containerRef = ref<HTMLElement | null>(null)
+const isCursorVisible = ref(false)
+const cursorStyle = ref<{ left: string; top: string }>({
+    left: '0px',
+    top: '0px'
+})
 
 const props = withDefaults(
     defineProps<{
         /** Markdown 文本内容 */
         content: string
+        /** 是否处于流式输出中（显示末尾光标） */
+        isStreaming?: boolean
         /** 外部传入的暗色模式状态（优先级高于 darkMode） */
         isDark?: boolean | null
         /** 是否启用 GFM 格式（表格、删除线等） */
@@ -39,6 +56,7 @@ const props = withDefaults(
         breaks?: boolean
     }>(),
     {
+        isStreaming: false,
         isDark: false,
         darkMode: 'auto',
         gfm: true,
@@ -146,13 +164,75 @@ const handleCopyClick = async (e: Event): Promise<void> => {
     }
 }
 
-// 组件挂载时绑定复制按钮事件
-import { onMounted } from 'vue'
+function findLastTextNode(root: HTMLElement): Text | null {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+    let lastTextNode: Text | null = null
+    let current = walker.nextNode()
+
+    while (current) {
+        const textNode = current as Text
+        if (textNode.nodeValue && textNode.nodeValue.trim().length > 0) {
+            lastTextNode = textNode
+        }
+        current = walker.nextNode()
+    }
+    return lastTextNode
+}
+
+function updateCursorPosition(): void {
+    const container = containerRef.value
+    if (!container || !props.isStreaming) {
+        isCursorVisible.value = false
+        return
+    }
+
+    const lastTextNode = findLastTextNode(container)
+    if (!lastTextNode) {
+        isCursorVisible.value = false
+        return
+    }
+
+    const range = document.createRange()
+    range.setStart(lastTextNode, lastTextNode.length)
+    range.setEnd(lastTextNode, lastTextNode.length)
+
+    const rects = range.getClientRects()
+    const lastRect = rects.length > 0 ? rects[rects.length - 1] : null
+    if (!lastRect) {
+        isCursorVisible.value = false
+        return
+    }
+
+    const containerRect = container.getBoundingClientRect()
+    const cursorSize = 9
+    cursorStyle.value = {
+        left: `${lastRect.right - containerRect.left + container.scrollLeft + 8}px`,
+        top: `${lastRect.top - containerRect.top + container.scrollTop + (lastRect.height - cursorSize) / 2}px`
+    }
+    isCursorVisible.value = true
+}
+
+async function syncCursorPosition(): Promise<void> {
+    await nextTick()
+    updateCursorPosition()
+}
+
 onMounted(() => {
-    const container = document.querySelector('.markdown-body')
+    const container = containerRef.value
     if (container) {
         container.addEventListener('click', handleCopyClick)
+        container.addEventListener('scroll', updateCursorPosition)
     }
+    window.addEventListener('resize', updateCursorPosition)
+})
+
+onBeforeUnmount(() => {
+    const container = containerRef.value
+    if (container) {
+        container.removeEventListener('click', handleCopyClick)
+        container.removeEventListener('scroll', updateCursorPosition)
+    }
+    window.removeEventListener('resize', updateCursorPosition)
 })
 
 /**
@@ -160,15 +240,23 @@ onMounted(() => {
  */
 const renderedContent = computed(() => {
     if (!props.content) return ''
+
     const html = marked.parse(props.content) as string
     return DOMPurify.sanitize(html, {
         ADD_TAGS: ['iframe'],
         ADD_ATTR: ['target', 'rel', 'allow', 'allowfullscreen']
     })
 })
+
+watch(() => props.content, syncCursorPosition)
+watch(() => props.isStreaming, syncCursorPosition, { immediate: true })
 </script>
 
 <style scoped>
+.markdown-wrapper {
+    position: relative;
+}
+
 /* 主题切换过渡动画 - 使用 PrimeVue 标准曲线 cubic-bezier(0.65, 0, 0.35, 1) */
 .theme-fade {
     transition: opacity 75ms cubic-bezier(0.65, 0, 0.35, 1);
@@ -236,5 +324,57 @@ const renderedContent = computed(() => {
 
 .markdown-body :deep(.copy-icon) {
     flex-shrink: 0;
+}
+
+.stream-cursor {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #2b2b2b;
+    box-shadow: 0 0 0 1px #6b6b6b;
+    opacity: 0;
+    pointer-events: none;
+    transform-origin: center;
+    z-index: 9;
+    transition: opacity 0.12s ease;
+}
+
+.stream-cursor.dark {
+    background: #f4f4f4;
+    box-shadow: 0 0 0 1px #b8b8b8;
+}
+
+.stream-cursor.visible {
+    opacity: 1;
+    animation:
+        cursor-blink 0.9s steps(1, end) infinite,
+        cursor-glow 0.9s ease-in-out infinite;
+}
+
+@keyframes cursor-blink {
+    0%,
+    49% {
+        opacity: 1;
+    }
+    50%,
+    100% {
+        opacity: 0.18;
+    }
+}
+
+@keyframes cursor-glow {
+    0% {
+        transform: scale(0.92);
+        filter: brightness(0.95);
+    }
+    50% {
+        transform: scale(1.2);
+        filter: brightness(1.2);
+    }
+    100% {
+        transform: scale(0.92);
+        filter: brightness(0.95);
+    }
 }
 </style>
