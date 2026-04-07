@@ -256,7 +256,7 @@ watch(() => props.isStreaming, syncCursorPosition, { immediate: true })
 .markdown-wrapper {
     position: relative;
     --motion-duration: 200ms;
-    --motion-ease: cubic-bezier(0.65, 0, 0.35, 1);
+    --motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .theme-fade {
