@@ -9,9 +9,18 @@ import { registerIpcHandlers } from './ipc'
 function createWindow(): void {
     // 创建浏览器窗口。
     const mainWindow = new BrowserWindow({
-        width: 900,
+        width: 1080,
         height: 670,
+        minWidth: 540,
+        minHeight: 600,
         show: false,
+        ...(process.platform === 'darwin'
+            ? {
+                  titleBarStyle: 'hiddenInset'
+              }
+            : {
+                  frame: false
+              }),
         autoHideMenuBar: true,
         ...(process.platform === 'linux' ? { icon } : {}),
         webPreferences: {

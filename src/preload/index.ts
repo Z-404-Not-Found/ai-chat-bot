@@ -60,11 +60,14 @@ function validateReceiveChannel(channel: string): channel is AllowedReceiveChann
 }
 
 const api = {
-    setConfig: (data: AIConfig): Promise<void> => {
+    setConfig: (data: AIConfig): Promise<{ success: boolean; error?: string }> => {
         if (!validateInvokeChannel(IPC_CHANNELS.AI_CONFIG_SET)) {
             return Promise.reject(new Error('无效的通道'))
         }
-        return ipcRenderer.invoke(IPC_CHANNELS.AI_CONFIG_SET, data) as Promise<void>
+        return ipcRenderer.invoke(IPC_CHANNELS.AI_CONFIG_SET, data) as Promise<{
+            success: boolean
+            error?: string
+        }>
     },
 
     getConfig: (): Promise<AIConfig> => {

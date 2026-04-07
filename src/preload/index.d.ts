@@ -16,7 +16,7 @@ declare global {
         electron: ElectronAPI
         api: {
             // AI 配置
-            setConfig: (data: AIConfig) => Promise<void>
+            setConfig: (data: AIConfig) => Promise<{ success: boolean; error?: string }>
             getConfig: () => Promise<AIConfig>
 
             // AI 聊天
