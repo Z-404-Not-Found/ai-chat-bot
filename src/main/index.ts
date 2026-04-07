@@ -14,13 +14,7 @@ function createWindow(): void {
         minWidth: 540,
         minHeight: 600,
         show: false,
-        ...(process.platform === 'darwin'
-            ? {
-                  titleBarStyle: 'hiddenInset'
-              }
-            : {
-                  frame: false
-              }),
+        frame: process.platform === 'darwin',
         autoHideMenuBar: true,
         ...(process.platform === 'linux' ? { icon } : {}),
         webPreferences: {
