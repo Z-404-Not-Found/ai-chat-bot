@@ -77,6 +77,19 @@ const api = {
         return ipcRenderer.invoke(IPC_CHANNELS.AI_CONFIG_GET) as Promise<AIConfig>
     },
 
+    sendMessage: (
+        conversationId: string,
+        content: string
+    ): Promise<{ success: boolean; content?: string; error?: string }> => {
+        if (!validateInvokeChannel(IPC_CHANNELS.AI_CHAT_CREATE)) {
+            return Promise.reject(new Error('无效的通道'))
+        }
+        return ipcRenderer.invoke(IPC_CHANNELS.AI_CHAT_CREATE, {
+            conversationId,
+            content
+        }) as Promise<{ success: boolean; content?: string; error?: string }>
+    },
+
     sendMessageStream: (conversationId: string, content: string): Promise<void> => {
         return ipcRenderer.invoke(IPC_CHANNELS.AI_CHAT_STREAM_START, {
             conversationId,
@@ -106,13 +119,13 @@ const api = {
     },
 
     onStreamChunk: (
-        callback: (chunk: string, type?: 'content' | 'reasoning') => void
+        callback: (chunk: string, type?: 'content' | 'reasoning', requestId?: string) => void
     ): (() => void) => {
         const handler = (
             _: Electron.IpcRendererEvent,
-            data: { content: string; type?: 'content' | 'reasoning' }
+            data: { content: string; type?: 'content' | 'reasoning'; requestId?: string }
         ): void => {
-            callback(data.content, data.type)
+            callback(data.content, data.type, data.requestId)
         }
         if (validateReceiveChannel(IPC_SEND.STREAM_CHUNK)) {
             ipcRenderer.on(IPC_SEND.STREAM_CHUNK, handler)
@@ -124,9 +137,12 @@ const api = {
         }
     },
 
-    onStreamEnd: (callback: (error?: string) => void): (() => void) => {
-        const handler = (_: Electron.IpcRendererEvent, data: { error?: string }): void => {
-            callback(data.error)
+    onStreamEnd: (callback: (error?: string, requestId?: string) => void): (() => void) => {
+        const handler = (
+            _: Electron.IpcRendererEvent,
+            data: { error?: string; requestId?: string }
+        ): void => {
+            callback(data.error, data.requestId)
         }
         if (validateReceiveChannel(IPC_SEND.STREAM_END)) {
             ipcRenderer.on(IPC_SEND.STREAM_END, handler)

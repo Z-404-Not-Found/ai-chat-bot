@@ -153,6 +153,10 @@ export function registerChatIpcHandlers(): void {
             // 忽略已取消流的中止错误
             if (error instanceof Error && error.name === 'AbortError') {
                 logger.info('流被用户中止:', requestId)
+                const win = BrowserWindow.fromWebContents(event.sender)
+                if (win && !win.isDestroyed()) {
+                    win.webContents.send(IPC_SEND.STREAM_END, { requestId })
+                }
             } else {
                 logger.error('流式聊天失败', error)
                 const win = BrowserWindow.fromWebContents(event.sender)
