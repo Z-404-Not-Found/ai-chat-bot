@@ -85,6 +85,14 @@
                         <span>{{ activeRole?.name || '请选择角色' }}</span>
                         <div class="flex items-center gap-2">
                             <Button
+                                icon="pi pi-image"
+                                severity="contrast"
+                                variant="text"
+                                :loading="exportingChatImage"
+                                :disabled="!activeRole || exportingChatImage || isStreaming"
+                                @click="exportChatLongImage"
+                            />
+                            <Button
                                 icon="pi pi-user-edit"
                                 severity="contrast"
                                 variant="text"
@@ -108,7 +116,7 @@
 
             <div
                 ref="chatContentRef"
-                class="flex-1 w-full overflow-y-auto flex flex-col gap-3 p-3 scroll-transparent"
+                class="flex-1 w-full overflow-y-auto flex flex-col gap-3 p-4 scroll-transparent"
             >
                 <div
                     v-if="activeRole?.system_prompt"
@@ -135,55 +143,67 @@
                     暂无消息，开始你的第一条提问吧。
                 </div>
 
-                <div v-for="item in displayMessages" :key="item.id" class="w-full">
+                <div
+                    v-for="item in displayMessages"
+                    :key="item.renderKey || item.id"
+                    class="w-full"
+                >
                     <div
                         class="flex"
                         :class="item.role === 'user' ? 'justify-end' : 'justify-start'"
                     >
-                        <div
-                            :class="[
-                                'max-w-[90%] lg:max-w-[78%] rounded-border border p-3 transition-motion',
-                                item.role === 'user'
-                                    ? 'bg-primary text-primary-contrast border-primary'
-                                    : 'bg-surface-0 dark:bg-[#0c1117] border-surface-200 dark:border-surface-700'
-                            ]"
-                        >
+                        <div class="inline-flex max-w-[90%] lg:max-w-[78%] flex-col">
                             <div
-                                class="mb-2 flex items-center justify-between gap-3 text-xs opacity-80"
+                                :class="[
+                                    'mb-1 flex items-center gap-3 text-xs opacity-80',
+                                    item.role === 'user'
+                                        ? 'justify-end text-right'
+                                        : 'justify-start text-left'
+                                ]"
                             >
                                 <span class="text-sm">{{ getMessageSenderLabel(item) }}</span>
                                 <span>{{ formatTime(item.created_at) }}</span>
                             </div>
-
                             <div
-                                v-if="item.role === 'assistant' && item.thinking"
-                                class="mb-3 rounded-border border border-surface-200 dark:border-surface-700 bg-emphasis p-2 transition-motion"
+                                :class="[
+                                    'rounded-border border p-3 transition-motion',
+                                    item.role === 'user'
+                                        ? 'bg-primary text-primary-contrast border-primary'
+                                        : 'bg-surface-0 dark:bg-[#0c1117] border-surface-200 dark:border-surface-700'
+                                ]"
                             >
-                                <div class="mb-1 text-xs font-semibold text-muted-color">
-                                    思考过程
+                                <div
+                                    v-if="item.role === 'assistant' && item.thinking"
+                                    class="mb-3 rounded-border border border-surface-200 dark:border-surface-700 bg-emphasis p-2 transition-motion"
+                                >
+                                    <div class="mb-1 text-xs font-semibold text-muted-color">
+                                        思考过程
+                                    </div>
+                                    <div
+                                        class="text-sm whitespace-pre-wrap wrap-break-word text-wrap-anywhere"
+                                    >
+                                        {{ item.thinking }}
+                                    </div>
+                                </div>
+
+                                <div
+                                    v-if="item.role === 'assistant'"
+                                    class="text-sm leading-6 text-wrap-anywhere"
+                                >
+                                    <MarkdownRenderer
+                                        :content="item.content"
+                                        :is-streaming="
+                                            isStreaming && item.id === streamingMessageId
+                                        "
+                                        :is-dark="isDark"
+                                    />
                                 </div>
                                 <div
-                                    class="text-sm whitespace-pre-wrap wrap-break-word text-wrap-anywhere"
+                                    v-else
+                                    class="text-sm leading-6 whitespace-pre-wrap wrap-break-word text-wrap-anywhere"
                                 >
-                                    {{ item.thinking }}
+                                    {{ item.content }}
                                 </div>
-                            </div>
-
-                            <div
-                                v-if="item.role === 'assistant'"
-                                class="text-sm leading-6 text-wrap-anywhere"
-                            >
-                                <MarkdownRenderer
-                                    :content="item.content"
-                                    :is-streaming="isStreaming && item.id === streamingMessageId"
-                                    :is-dark="isDark"
-                                />
-                            </div>
-                            <div
-                                v-else
-                                class="text-sm leading-6 whitespace-pre-wrap wrap-break-word text-wrap-anywhere"
-                            >
-                                {{ item.content }}
                             </div>
                         </div>
                     </div>
@@ -494,6 +514,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import ToggleSwitch from 'primevue/toggleswitch'
+import { snapdom } from '@zumer/snapdom'
 import type {
     Character,
     Conversation,
@@ -508,6 +529,7 @@ import { useLayoutToast } from '@renderer/composables/useLayoutToast'
 
 interface DisplayMessage {
     id: string
+    renderKey?: string
     role: 'user' | 'assistant' | 'system'
     content: string
     thinking?: string
@@ -541,6 +563,7 @@ const baseURLConfigured = ref(false)
 const conversationPreviewMap = ref<Record<string, string>>({})
 
 const chatContentRef = ref<HTMLElement | null>(null)
+const exportingChatImage = ref(false)
 
 const activeStreamRequestId = ref('')
 const pendingStreamConversationId = ref('')
@@ -550,6 +573,8 @@ const streamContent = ref('')
 const streamThinking = ref('')
 const streamExpectThinking = ref(false)
 const streamHasReasoning = ref(false)
+const streamPersistedMessageId = ref('')
+const streamPersistedRenderKey = ref('')
 
 const addRoleShow = ref(false)
 const editRoleShow = ref(false)
@@ -610,6 +635,10 @@ const canSend = computed(() => {
 const displayMessages = computed<DisplayMessage[]>(() => {
     const persisted: DisplayMessage[] = messageList.value.map((item) => ({
         id: item.id,
+        renderKey:
+            item.id === streamPersistedMessageId.value
+                ? streamPersistedRenderKey.value || item.id
+                : item.id,
         role: item.role,
         content: item.content,
         thinking: item.thinking,
@@ -672,6 +701,13 @@ function getDefaultConversationTitle(content: string): string {
     return firstLine || '新对话'
 }
 
+function getExportTimestamp(): string {
+    const date = new Date()
+    return `${date.getFullYear()}${pad2(date.getMonth() + 1)}${pad2(date.getDate())}_${pad2(
+        date.getHours()
+    )}${pad2(date.getMinutes())}${pad2(date.getSeconds())}`
+}
+
 async function refreshConversationPreviews(conversations: Conversation[]): Promise<void> {
     const entries = await Promise.all(
         conversations.map(async (conversation) => {
@@ -693,6 +729,61 @@ async function scrollToBottom(): Promise<void> {
     const el = chatContentRef.value
     if (!el) return
     el.scrollTop = el.scrollHeight
+}
+
+async function exportChatLongImage(): Promise<void> {
+    if (exportingChatImage.value) return
+
+    const source = chatContentRef.value
+    if (!source) {
+        toast.warn('未找到聊天内容区域')
+        return
+    }
+
+    if (displayMessages.value.length === 0) {
+        toast.warn('暂无聊天内容可导出')
+        return
+    }
+
+    exportingChatImage.value = true
+
+    const wrapper = document.createElement('div')
+    wrapper.style.position = 'fixed'
+    wrapper.style.left = '-100000px'
+    wrapper.style.top = '0'
+    wrapper.style.pointerEvents = 'none'
+    wrapper.style.zIndex = '-1'
+    wrapper.style.width = `${source.clientWidth}px`
+    wrapper.style.background = isDark.value ? '#0b1220' : '#ffffff'
+
+    const clone = source.cloneNode(true) as HTMLElement
+    clone.style.width = `${source.clientWidth}px`
+    clone.style.maxHeight = 'none'
+    clone.style.height = `${source.scrollHeight}px`
+    clone.style.overflow = 'visible'
+
+    wrapper.appendChild(clone)
+    document.body.appendChild(wrapper)
+
+    try {
+        await nextTick()
+
+        const roleName = (activeRole.value?.name || 'chat').replace(/[\\/:*?"<>|]/g, '_')
+        await snapdom.download(clone, {
+            type: 'png',
+            filename: `${roleName}_${getExportTimestamp()}.png`,
+            scale: 2,
+            backgroundColor: isDark.value ? '#0b1220' : '#ffffff',
+            embedFonts: true
+        })
+        toast.success('聊天记录长图导出成功')
+    } catch (error) {
+        console.error(error)
+        toast.error('导出失败，请稍后重试')
+    } finally {
+        wrapper.remove()
+        exportingChatImage.value = false
+    }
 }
 
 async function refreshRoles(): Promise<void> {
@@ -752,12 +843,16 @@ async function refreshConversations(characterId: string): Promise<void> {
 async function refreshMessages(conversationId: string): Promise<void> {
     if (!conversationId) {
         messageList.value = []
+        streamPersistedMessageId.value = ''
+        streamPersistedRenderKey.value = ''
         return
     }
 
     loadingMessages.value = true
     try {
         messageList.value = await window.api.getMessages(conversationId)
+        streamPersistedMessageId.value = ''
+        streamPersistedRenderKey.value = ''
         const lastMessage = messageList.value[messageList.value.length - 1]
         conversationPreviewMap.value = {
             ...conversationPreviewMap.value,
@@ -1125,6 +1220,7 @@ function setupStreamListeners(): void {
         const conversationId = pendingStreamConversationId.value
         const assistantContent = streamContent.value
         const assistantThinking = streamThinking.value
+        const streamRenderKey = streamingMessageId.value
 
         if (error) {
             toast.error(error, '流式聊天失败')
@@ -1143,7 +1239,7 @@ function setupStreamListeners(): void {
                     input.thinking = assistantThinking
                 }
 
-                await window.api.createMessage(input)
+                const createdMessage = await window.api.createMessage(input)
                 await touchConversation(conversationId)
 
                 if (activeRole.value) {
@@ -1151,7 +1247,13 @@ function setupStreamListeners(): void {
                 }
 
                 if (conversationId === activeConversationId.value) {
-                    await refreshMessages(conversationId)
+                    streamPersistedMessageId.value = createdMessage.id
+                    streamPersistedRenderKey.value = streamRenderKey
+                    messageList.value = [...messageList.value, createdMessage]
+                    conversationPreviewMap.value = {
+                        ...conversationPreviewMap.value,
+                        [conversationId]: createdMessage.content || '暂无消息'
+                    }
                 }
             } catch (persistError) {
                 console.error(persistError)
@@ -1310,6 +1412,8 @@ watch(activeRoleId, async (id) => {
 watch(activeConversationId, async (id) => {
     if (!id) {
         messageList.value = []
+        streamPersistedMessageId.value = ''
+        streamPersistedRenderKey.value = ''
         return
     }
 
