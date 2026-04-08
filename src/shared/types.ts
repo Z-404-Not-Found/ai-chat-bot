@@ -74,6 +74,7 @@ export interface ChatMessage {
 // SET 时所有字段可选（支持部分更新），GET 时返回完整数据
 export interface AIConfig {
     apiKey?: string
+    apiKeyConfigured?: boolean
     baseURL?: string
     model?: string
     thinkingMode?: boolean

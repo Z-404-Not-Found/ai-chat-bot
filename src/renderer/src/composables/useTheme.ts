@@ -42,7 +42,7 @@ interface UseThemeReturn {
 
 export function useTheme(): UseThemeReturn {
     const currentPreset = ref<ThemePreset>('aura')
-    const currentThemeMode = ref<ThemeMode>('light')
+    const currentThemeMode = ref<ThemeMode>('system')
     const isDark = ref(false)
 
     // 媒体查询引用

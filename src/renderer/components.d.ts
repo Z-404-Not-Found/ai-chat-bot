@@ -25,5 +25,6 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     SelectButton: typeof import('primevue/selectbutton')['default']
     Textarea: typeof import('primevue/textarea')['default']
+    ToggleSwitch: typeof import('primevue/toggleswitch')['default']
   }
 }

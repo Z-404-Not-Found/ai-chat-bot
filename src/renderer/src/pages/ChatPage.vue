@@ -151,7 +151,7 @@
                             <div
                                 class="mb-2 flex items-center justify-between gap-3 text-xs opacity-80"
                             >
-                                <span>{{ item.role === 'user' ? '你' : '助手' }}</span>
+                                <span class="text-sm">{{ getMessageSenderLabel(item) }}</span>
                                 <span>{{ formatTime(item.created_at) }}</span>
                             </div>
 
@@ -201,9 +201,22 @@
                     @keydown="handleKeyDown"
                 />
 
-                <div class="flex justify-between items-center">
-                    <div class="text-xs text-muted-color">当前模型：{{ currentModel }}</div>
-                    <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 whitespace-nowrap">
+                    <div class="min-w-0 flex-1 flex items-center gap-3 text-xs text-muted-color">
+                        <div class="min-w-0 flex-1 truncate" :title="currentModel">
+                            当前模型：{{ currentModel }}
+                        </div>
+                        <div class="inline-flex shrink-0 items-center gap-2">
+                            <label for="thinking-mode-switch">思考模式</label>
+                            <ToggleSwitch
+                                input-id="thinking-mode-switch"
+                                :model-value="thinkingMode"
+                                :disabled="updatingThinkingMode || isStreaming"
+                                @update:model-value="onThinkingModeChange"
+                            />
+                        </div>
+                    </div>
+                    <div class="flex shrink-0 items-center gap-2">
                         <Button
                             v-if="isStreaming"
                             icon="pi pi-stop"
@@ -480,6 +493,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import ToggleSwitch from 'primevue/toggleswitch'
 import type {
     Character,
     Conversation,
@@ -497,6 +511,7 @@ interface DisplayMessage {
     role: 'user' | 'assistant' | 'system'
     content: string
     thinking?: string
+    model?: string
     created_at: number
 }
 
@@ -518,7 +533,12 @@ const activeConversationId = ref('')
 
 const messageList = ref<Message[]>([])
 const message = ref('')
-const currentModel = ref('gpt-4o-mini')
+const currentModel = ref('')
+const thinkingMode = ref(true)
+const updatingThinkingMode = ref(false)
+const apiKeyConfigured = ref(false)
+const baseURLConfigured = ref(false)
+const conversationPreviewMap = ref<Record<string, string>>({})
 
 const chatContentRef = ref<HTMLElement | null>(null)
 
@@ -527,6 +547,8 @@ const pendingStreamConversationId = ref('')
 const streamingMessageId = ref('')
 const streamContent = ref('')
 const streamThinking = ref('')
+const streamExpectThinking = ref(false)
+const streamHasReasoning = ref(false)
 
 const addRoleShow = ref(false)
 const editRoleShow = ref(false)
@@ -590,6 +612,7 @@ const displayMessages = computed<DisplayMessage[]>(() => {
         role: item.role,
         content: item.content,
         thinking: item.thinking,
+        model: item.model,
         created_at: item.created_at
     }))
 
@@ -602,6 +625,7 @@ const displayMessages = computed<DisplayMessage[]>(() => {
             role: 'assistant',
             content: streamContent.value,
             thinking: streamThinking.value || undefined,
+            model: currentModel.value || undefined,
             created_at: Date.now()
         })
     }
@@ -625,10 +649,41 @@ function onSearchRole(): void {
 }
 
 function getConversationPreview(conversationId: string): string {
-    if (conversationId === activeConversationId.value && messageList.value.length > 0) {
-        return messageList.value[messageList.value.length - 1]?.content || '暂无消息'
+    return conversationPreviewMap.value[conversationId] || '暂无消息'
+}
+
+function getMessageSenderLabel(item: DisplayMessage): string {
+    if (item.role === 'user') return '我'
+    if (item.role === 'assistant') {
+        const roleName = activeRole.value?.name || '助手'
+        const modelName = item.model || currentModel.value || 'unknown'
+        return `${roleName}（${modelName}）`
     }
-    return '点击查看消息'
+    return '系统'
+}
+
+function getDefaultConversationTitle(content: string): string {
+    const firstLine = content
+        .split('\n')
+        .map((line) => line.trim())
+        .find((line) => Boolean(line))
+    return firstLine || '新对话'
+}
+
+async function refreshConversationPreviews(conversations: Conversation[]): Promise<void> {
+    const entries = await Promise.all(
+        conversations.map(async (conversation) => {
+            try {
+                const messages = await window.api.getMessages(conversation.id)
+                const lastMessage = messages[messages.length - 1]
+                return [conversation.id, lastMessage?.content || '暂无消息'] as const
+            } catch {
+                return [conversation.id, '暂无消息'] as const
+            }
+        })
+    )
+
+    conversationPreviewMap.value = Object.fromEntries(entries)
 }
 
 async function scrollToBottom(): Promise<void> {
@@ -664,6 +719,7 @@ async function refreshConversations(characterId: string): Promise<void> {
         conversationList.value = []
         activeConversationId.value = ''
         messageList.value = []
+        conversationPreviewMap.value = {}
         return
     }
 
@@ -671,6 +727,7 @@ async function refreshConversations(characterId: string): Promise<void> {
     try {
         const list = await window.api.getConversations(characterId)
         conversationList.value = list
+        await refreshConversationPreviews(list)
 
         if (
             activeConversationId.value &&
@@ -699,6 +756,11 @@ async function refreshMessages(conversationId: string): Promise<void> {
     loadingMessages.value = true
     try {
         messageList.value = await window.api.getMessages(conversationId)
+        const lastMessage = messageList.value[messageList.value.length - 1]
+        conversationPreviewMap.value = {
+            ...conversationPreviewMap.value,
+            [conversationId]: lastMessage?.content || '暂无消息'
+        }
         await scrollToBottom()
     } catch (error) {
         console.error(error)
@@ -728,7 +790,7 @@ async function ensureConversation(): Promise<Conversation | null> {
 
     const input: CreateConversationInput = {
         character_id: activeRole.value.id,
-        title: `新对话 ${new Date().toLocaleString('zh-CN', { hour12: false })}`
+        title: '新对话'
     }
 
     const created = await window.api.createConversation(input)
@@ -1022,6 +1084,8 @@ function resetStreamingState(): void {
     streamingMessageId.value = ''
     streamContent.value = ''
     streamThinking.value = ''
+    streamExpectThinking.value = false
+    streamHasReasoning.value = false
     sending.value = false
 }
 
@@ -1040,6 +1104,7 @@ function setupStreamListeners(): void {
         }
 
         if (type === 'reasoning') {
+            streamHasReasoning.value = true
             streamThinking.value += chunk
         } else {
             streamContent.value += chunk
@@ -1066,7 +1131,8 @@ function setupStreamListeners(): void {
                 const input: CreateMessageInput = {
                     conversation_id: conversationId,
                     role: 'assistant',
-                    content: assistantContent || '(空响应)'
+                    content: assistantContent || '(空响应)',
+                    model: currentModel.value || undefined
                 }
 
                 if (assistantThinking) {
@@ -1089,6 +1155,10 @@ function setupStreamListeners(): void {
             }
         }
 
+        if (!error && streamExpectThinking.value && !streamHasReasoning.value) {
+            await disableThinkingModeWhenUnsupported()
+        }
+
         resetStreamingState()
     })
 }
@@ -1096,6 +1166,22 @@ function setupStreamListeners(): void {
 async function sendMessage(): Promise<void> {
     const content = message.value.trim()
     if (!content) return
+
+    try {
+        const config = await window.api.getConfig()
+        apiKeyConfigured.value = Boolean(config.apiKeyConfigured)
+        baseURLConfigured.value = Boolean(config.baseURL?.trim())
+        currentModel.value = config.model || currentModel.value
+        thinkingMode.value = Boolean(config.thinkingMode)
+    } catch (error) {
+        toast.error(String(error), '读取配置失败')
+        return
+    }
+
+    if (!apiKeyConfigured.value || !baseURLConfigured.value || !currentModel.value?.trim()) {
+        toast.warn('请先在设置页完整配置 API Key、Base URL 和模型后再发送')
+        return
+    }
 
     if (!activeRole.value) {
         toast.warn('请先选择角色')
@@ -1116,6 +1202,7 @@ async function sendMessage(): Promise<void> {
 
         const conversationId = ensuredConversation.id
         activeConversationId.value = conversationId
+        const isFirstUserMessage = messageList.value.length === 0
 
         const userInput: CreateMessageInput = {
             conversation_id: conversationId,
@@ -1125,8 +1212,8 @@ async function sendMessage(): Promise<void> {
 
         await window.api.createMessage(userInput)
 
-        if (messageList.value.length === 0 && activeConversation.value) {
-            const title = content.length > 24 ? `${content.slice(0, 24)}...` : content
+        if (isFirstUserMessage) {
+            const title = getDefaultConversationTitle(content)
             await window.api.updateConversation(conversationId, { title })
         }
 
@@ -1144,6 +1231,8 @@ async function sendMessage(): Promise<void> {
         streamingMessageId.value = `stream_${Date.now()}`
         streamContent.value = ''
         streamThinking.value = ''
+        streamExpectThinking.value = thinkingMode.value
+        streamHasReasoning.value = false
 
         void window.api.sendMessageStream(conversationId, content).catch((error: unknown) => {
             console.error(error)
@@ -1167,6 +1256,40 @@ function stopChatStream(): void {
     } else {
         toast.info('正在建立连接，请稍候停止')
     }
+}
+
+async function setThinkingMode(nextValue: boolean): Promise<void> {
+    if (updatingThinkingMode.value) return
+
+    updatingThinkingMode.value = true
+    const previous = thinkingMode.value
+    thinkingMode.value = nextValue
+
+    try {
+        const result = await window.api.setConfig({
+            thinkingMode: nextValue
+        })
+        if (!result.success) {
+            throw new Error(result.error || '保存失败')
+        }
+    } catch (error) {
+        thinkingMode.value = previous
+        toast.error(String(error), '更新思考模式失败')
+    } finally {
+        updatingThinkingMode.value = false
+    }
+}
+
+function onThinkingModeChange(nextValue: boolean): void {
+    if (typeof nextValue !== 'boolean') return
+    if (nextValue === thinkingMode.value) return
+    void setThinkingMode(nextValue)
+}
+
+async function disableThinkingModeWhenUnsupported(): Promise<void> {
+    if (!thinkingMode.value) return
+    toast.warn(`当前模型（${currentModel.value || 'unknown'}）不支持思考模式，已自动关闭`)
+    await setThinkingMode(false)
 }
 
 watch(activeRoleId, async (id) => {
@@ -1206,12 +1329,11 @@ onMounted(async () => {
 
     setupStreamListeners()
 
-    try {
-        const config = await window.api.getConfig()
-        currentModel.value = config.model || 'gpt-4o-mini'
-    } catch {
-        currentModel.value = 'gpt-4o-mini'
-    }
+    const config = await window.api.getConfig()
+    currentModel.value = config.model || '请配置模型'
+    thinkingMode.value = Boolean(config.thinkingMode)
+    apiKeyConfigured.value = Boolean(config.apiKeyConfigured)
+    baseURLConfigured.value = Boolean(config.baseURL?.trim())
 
     await refreshRoles()
 

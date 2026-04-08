@@ -15,8 +15,7 @@ const AI_KEYS = {
 } as const
 
 // 默认设置
-const DEFAULT_MODEL = 'gpt-4o-mini'
-const DEFAULT_THINKING = false
+const DEFAULT_THINKING = true
 const DEFAULT_CONTEXT_COUNT = 10
 
 export function registerConfigIpcHandlers(): void {
@@ -55,8 +54,9 @@ export function registerConfigIpcHandlers(): void {
     // 获取配置
     ipcMain.handle(IPC_CHANNELS.AI_CONFIG_GET, async () => {
         const config: AIConfig = {
+            apiKeyConfigured: Boolean(getObject<string>(AI_KEYS.API_KEY)),
             baseURL: getObject<string>(AI_KEYS.BASE_URL),
-            model: getObject<string>(AI_KEYS.MODEL) || DEFAULT_MODEL,
+            model: getObject<string>(AI_KEYS.MODEL),
             thinkingMode: getObject<boolean>(AI_KEYS.THINKING_MODE) ?? DEFAULT_THINKING,
             contextCount: getObject<number>(AI_KEYS.CONTEXT_COUNT) ?? DEFAULT_CONTEXT_COUNT
         }
@@ -65,4 +65,4 @@ export function registerConfigIpcHandlers(): void {
 }
 
 // 导出配置键名和默认值，供其他模块使用
-export { AI_KEYS, DEFAULT_MODEL, DEFAULT_THINKING, DEFAULT_CONTEXT_COUNT }
+export { AI_KEYS, DEFAULT_THINKING, DEFAULT_CONTEXT_COUNT }

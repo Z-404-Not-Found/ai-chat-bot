@@ -4,7 +4,7 @@ import { getOpenAIClient } from '../services/openai'
 import type { ChatMessage, ChatRequest } from '../../shared/types'
 import logger from '../utils/logger'
 import { IPC_CHANNELS, IPC_SEND } from '../../shared/constants'
-import { AI_KEYS, DEFAULT_MODEL, DEFAULT_CONTEXT_COUNT } from './aiConfig'
+import { AI_KEYS, DEFAULT_CONTEXT_COUNT, DEFAULT_THINKING } from './aiConfig'
 import { getMessagesByConversationId } from '../database/messages'
 import { getConversationById } from '../database/conversations'
 import { getCharacterById } from '../database/characters'
@@ -18,8 +18,8 @@ export function registerChatIpcHandlers(): void {
     ipcMain.handle(IPC_CHANNELS.AI_CHAT_CREATE, async (_, request: ChatRequest) => {
         try {
             const client = getOpenAIClient()
-            const model = getObject<string>(AI_KEYS.MODEL) || DEFAULT_MODEL
-            const thinkingMode = true
+            const model = getObject<string>(AI_KEYS.MODEL)
+            const thinkingMode = getObject<boolean>(AI_KEYS.THINKING_MODE) ?? DEFAULT_THINKING
             const contextCount = getObject<number>(AI_KEYS.CONTEXT_COUNT) ?? DEFAULT_CONTEXT_COUNT
 
             // 获取角色 system prompt
@@ -71,8 +71,8 @@ export function registerChatIpcHandlers(): void {
 
         try {
             const client = getOpenAIClient()
-            const model = getObject<string>(AI_KEYS.MODEL) || DEFAULT_MODEL
-            const thinkingMode = true
+            const model = getObject<string>(AI_KEYS.MODEL)
+            const thinkingMode = getObject<boolean>(AI_KEYS.THINKING_MODE) ?? DEFAULT_THINKING
             const contextCount = getObject<number>(AI_KEYS.CONTEXT_COUNT) ?? DEFAULT_CONTEXT_COUNT
 
             // 获取角色 system prompt

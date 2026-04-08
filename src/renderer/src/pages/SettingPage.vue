@@ -112,7 +112,7 @@ const toast = useLayoutToast()
 
 const apiKey = ref('')
 const baseURL = ref('')
-const model = ref('gpt-4o-mini')
+const model = ref('')
 const contextCount = ref<number>(10)
 const isSaving = ref(false)
 
@@ -130,7 +130,7 @@ const loadConfig = async (): Promise<void> => {
     try {
         const config = await window.api.getConfig()
         baseURL.value = config.baseURL ?? ''
-        model.value = config.model ?? 'gpt-4o-mini'
+        model.value = config.model ?? ''
         contextCount.value = normalizeContextCount(config.contextCount)
     } catch (error) {
         toast.error(String(error), '读取配置失败')
@@ -146,7 +146,7 @@ const saveConfig = async (): Promise<void> => {
 
         const payload: AIConfig = {
             baseURL: baseURL.value.trim(),
-            model: model.value.trim() || 'gpt-4o-mini',
+            model: model.value.trim(),
             contextCount: contextCount.value
         }
 
