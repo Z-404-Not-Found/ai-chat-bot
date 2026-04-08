@@ -197,14 +197,19 @@
                 </nav>
             </aside>
         </transition>
+        <Toast position="top-right" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, provide, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import Toast from 'primevue/toast'
+import { useToast } from 'primevue/usetoast'
+import type { ToastMessageOptions } from 'primevue/toast'
 import { useTheme } from '@renderer/composables/useTheme'
 import type { ThemeMode } from '@renderer/themes/myPreset'
+import { LAYOUT_TOAST_KEY, type LayoutToastApi } from '@renderer/composables/useLayoutToast'
 
 const { currentThemeMode, modeOptions, setThemeMode } = useTheme()
 
@@ -242,6 +247,7 @@ const settingNavItem: NavItem = navItems.find((item) => item.path === '/setting'
 
 const route = useRoute()
 const router = useRouter()
+const toast = useToast()
 
 const isMobileSidebarOpen = ref(false)
 const isSidebarCollapsed = ref(false)
@@ -305,6 +311,26 @@ const handleResize = (): void => {
         isMobileSidebarOpen.value = false
     }
 }
+
+const layoutToast: LayoutToastApi = {
+    notify: (message: ToastMessageOptions): void => {
+        toast.add(message)
+    },
+    success: (detail: string, summary = '成功', life = 2500): void => {
+        toast.add({ severity: 'success', summary, detail, life })
+    },
+    info: (detail: string, summary = '提示', life = 2500): void => {
+        toast.add({ severity: 'info', summary, detail, life })
+    },
+    warn: (detail: string, summary = '警告', life = 3000): void => {
+        toast.add({ severity: 'warn', summary, detail, life })
+    },
+    error: (detail: string, summary = '错误', life = 3500): void => {
+        toast.add({ severity: 'error', summary, detail, life })
+    }
+}
+
+provide(LAYOUT_TOAST_KEY, layoutToast)
 
 onMounted(async () => {
     await syncWindowState()
