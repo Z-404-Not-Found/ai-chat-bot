@@ -7,7 +7,7 @@
                 class="hidden h-full rounded-2xl border border-surface-200 bg-surface-0 p-3 lg:flex lg:flex-col dark:border-surface-800 dark:bg-surface-900 transition-motion"
                 :class="isSidebarCollapsed ? 'w-18' : 'w-48'"
             >
-                <div class="mb-3 flex h-8 items-center gap-3 rounded-xl px-2">
+                <div class="mb-3 flex h-8 items-center justify-center gap-3 rounded-xl px-2">
                     <div
                         class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary-100 text-primary-700 dark:bg-primary-950 dark:text-primary-300 transition-motion"
                     >
