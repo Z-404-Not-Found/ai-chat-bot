@@ -1,11 +1,10 @@
 <template>
     <div
-        class="layout-shell h-full w-full overflow-hidden p-3 transition-motion"
-        :style="layoutVars"
+        class="h-full w-full overflow-hidden bg-surface-0 dark:bg-surface-900 p-3 text-color transition-motion"
     >
         <div class="flex h-full w-full gap-3">
             <aside
-                class="layout-panel hidden h-full p-3 lg:flex lg:flex-col transition-motion"
+                class="hidden h-full border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-900 p-3 transition-motion lg:flex lg:flex-col rounded-border"
                 :class="isSidebarCollapsed ? 'w-18' : 'w-48'"
             >
                 <div class="mb-3 flex h-8 items-center justify-center gap-3 rounded-xl px-2">
@@ -21,18 +20,20 @@
                         AI 聊天助手
                     </div>
                 </div>
-                <div class="layout-divider my-1 h-px transition-motion"></div>
+                <div class="my-1 h-px bg-surface-200 dark:bg-surface-700 transition-motion"></div>
                 <nav class="mt-3 flex flex-1 flex-col gap-2">
                     <button
                         v-for="item in primaryNavItems"
                         :key="item.path"
                         type="button"
-                        class="layout-nav-shape group flex items-center justify-center overflow-hidden text-sm transition-motion"
+                        class="group flex items-center justify-center overflow-hidden text-sm transition-motion rounded-border"
                         :class="[
                             isSidebarCollapsed
                                 ? 'mx-auto h-11 w-11 justify-center px-0'
                                 : 'h-11 w-full px-3',
-                            isActive(item.path) ? 'layout-nav-active' : 'layout-nav-idle'
+                            isActive(item.path)
+                                ? 'bg-primary text-primary-contrast'
+                                : 'text-muted-color hover:bg-emphasis hover:text-color'
                         ]"
                         @click="goTo(item.path)"
                     >
@@ -46,12 +47,14 @@
                 </nav>
                 <button
                     type="button"
-                    class="layout-nav-shape group mt-2 flex items-center justify-center overflow-hidden text-sm transition-motion"
+                    class="group mt-2 flex items-center justify-center overflow-hidden text-sm transition-motion rounded-border"
                     :class="[
                         isSidebarCollapsed
                             ? 'mx-auto h-11 w-11 justify-center px-0'
                             : 'h-11 w-full px-3',
-                        isActive(settingNavItem.path) ? 'layout-nav-active' : 'layout-nav-idle'
+                        isActive(settingNavItem.path)
+                            ? 'bg-primary text-primary-contrast'
+                            : 'text-muted-color hover:bg-emphasis hover:text-color'
                     ]"
                     @click="goTo(settingNavItem.path)"
                 >
@@ -64,7 +67,7 @@
                 </button>
                 <button
                     type="button"
-                    class="layout-nav-shape layout-nav-idle mt-2 flex items-center px-3 text-sm transition-motion"
+                    class="mt-2 flex items-center px-3 text-sm text-muted-color transition-motion hover:bg-emphasis hover:text-color rounded-border"
                     :class="
                         isSidebarCollapsed
                             ? 'mx-auto h-11 w-11 justify-center px-0'
@@ -82,11 +85,11 @@
 
             <div class="min-w-0 flex-1 flex flex-col gap-2">
                 <div
-                    class="layout-panel layout-nav-shape flex h-14 items-center px-3 transition-motion"
+                    class="flex h-14 items-center border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-900 px-3 transition-motion rounded-border"
                 >
                     <Button
                         icon="pi pi-bars"
-                        class="layout-icon-btn h-9! w-9! p-0! lg:hidden!"
+                        class="h-9! w-9! p-0! lg:hidden! rounded-border! hover:bg-emphasis!"
                         severity="contrast"
                         variant="text"
                         @click="isMobileSidebarOpen = true"
@@ -99,7 +102,7 @@
                     <div class="no-drag-region mr-2 flex items-center gap-1">
                         <Button
                             :icon="themeIcon"
-                            class="layout-icon-btn h-8! w-8! p-0!"
+                            class="h-8! w-8! p-0! rounded-border! hover:bg-emphasis!"
                             severity="contrast"
                             variant="text"
                             :aria-label="`主题: ${themeLabel}`"
@@ -108,7 +111,7 @@
                         <template v-if="!isMac">
                             <Button
                                 icon="pi pi-minus"
-                                class="layout-icon-btn h-8! w-8! p-0!"
+                                class="h-8! w-8! p-0! rounded-border! hover:bg-emphasis!"
                                 severity="contrast"
                                 variant="text"
                                 @click="minimizeWindow"
@@ -117,14 +120,14 @@
                                 :icon="
                                     isMaximized ? 'pi pi-window-minimize' : 'pi pi-window-maximize'
                                 "
-                                class="layout-icon-btn h-8! w-8! p-0!"
+                                class="h-8! w-8! p-0! rounded-border! hover:bg-emphasis!"
                                 severity="contrast"
                                 variant="text"
                                 @click="toggleMaximizeWindow"
                             />
                             <Button
                                 icon="pi pi-times"
-                                class="layout-icon-btn layout-icon-btn-danger h-8! w-8! p-0!"
+                                class="h-8! w-8! p-0! rounded-border! hover:bg-red-500! hover:text-white!"
                                 severity="contrast"
                                 variant="text"
                                 @click="closeWindow"
@@ -134,7 +137,9 @@
                 </div>
 
                 <main class="min-h-0 flex-1">
-                    <section class="layout-panel h-full overflow-hidden p-3 transition-motion">
+                    <section
+                        class="h-full overflow-hidden border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-900 p-3 transition-motion rounded-border"
+                    >
                         <div class="h-full overflow-y-auto">
                             <RouterView />
                         </div>
@@ -153,7 +158,7 @@
         <transition name="mobile-drawer-slide">
             <aside
                 v-if="isMobileSidebarOpen"
-                class="layout-panel fixed left-0 top-0 z-50 flex h-full w-64 flex-col p-3 lg:hidden"
+                class="fixed left-0 top-0 z-50 flex h-full w-64 flex-col border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-900 p-3 lg:hidden rounded-border"
             >
                 <div class="mb-3 flex h-12 items-center justify-between rounded-xl px-2">
                     <div class="flex items-center gap-3">
@@ -166,20 +171,24 @@
                     </div>
                     <Button
                         icon="pi pi-times"
-                        class="layout-icon-btn h-8! w-8! p-0!"
+                        class="h-8! w-8! p-0! rounded-border! hover:bg-emphasis!"
                         severity="contrast"
                         variant="text"
                         @click="isMobileSidebarOpen = false"
                     />
                 </div>
-                <div class="layout-divider my-1 h-px"></div>
+                <div class="my-1 h-px bg-surface-200 dark:bg-surface-700"></div>
                 <nav class="mt-3 flex flex-1 flex-col gap-2">
                     <button
                         v-for="item in navItems"
                         :key="item.path"
                         type="button"
-                        class="layout-nav-shape flex h-11 w-full items-center px-3 text-sm"
-                        :class="isActive(item.path) ? 'layout-nav-active' : 'layout-nav-idle'"
+                        class="flex h-11 w-full items-center px-3 text-sm rounded-border"
+                        :class="
+                            isActive(item.path)
+                                ? 'bg-primary text-primary-contrast'
+                                : 'text-muted-color hover:bg-emphasis hover:text-color'
+                        "
                         @click="goTo(item.path, true)"
                     >
                         <i :class="`pi ${item.icon}`"></i>
@@ -195,7 +204,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, provide, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { $dt } from '@primeuix/themes'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
 import type { ToastMessageOptions } from 'primevue/toast'
@@ -247,18 +255,6 @@ const isMaximized = ref(false)
 const platform = ref<'darwin' | 'win32' | 'linux'>('win32')
 
 const isMac = computed(() => platform.value === 'darwin')
-
-const layoutVars = computed<Record<string, string>>(() => ({
-    '--layout-shell-bg': $dt('content.background').variable,
-    '--layout-panel-bg': $dt('content.background').variable,
-    '--layout-panel-border': $dt('content.border.color').variable,
-    '--layout-panel-radius': $dt('content.border.radius').variable,
-    '--layout-text': $dt('text.color').variable,
-    '--layout-text-muted': $dt('text.muted.color').variable,
-    '--layout-hover-bg': $dt('content.hover.background').variable,
-    '--layout-primary': $dt('primary.color').variable,
-    '--layout-primary-contrast': $dt('primary.contrast.color').variable
-}))
 
 const titleMap: Record<string, string> = {
     '/chat': '聊天',
@@ -347,52 +343,6 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.layout-shell {
-    background: var(--layout-shell-bg);
-    color: var(--layout-text);
-}
-
-.layout-panel {
-    background: var(--layout-panel-bg);
-    border: 1px solid var(--layout-panel-border);
-    border-radius: calc(var(--layout-panel-radius) * 2);
-}
-
-.layout-nav-shape {
-    border-radius: calc(var(--layout-panel-radius) * 1.75);
-}
-
-.layout-divider {
-    background: var(--layout-panel-border);
-}
-
-.layout-nav-active {
-    background: var(--layout-primary);
-    color: var(--layout-primary-contrast);
-}
-
-.layout-nav-idle {
-    color: var(--layout-text-muted);
-}
-
-.layout-nav-idle:hover {
-    background: var(--layout-hover-bg);
-    color: var(--layout-text);
-}
-
-.layout-icon-btn {
-    border-radius: calc(var(--layout-panel-radius) * 1.2) !important;
-}
-
-.layout-icon-btn:hover {
-    background: var(--layout-hover-bg) !important;
-}
-
-.layout-icon-btn-danger:hover {
-    background: #ef4444 !important;
-    color: #fff !important;
-}
-
 .drag-region {
     -webkit-app-region: drag;
 }
