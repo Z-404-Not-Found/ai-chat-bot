@@ -4,7 +4,7 @@ import { getOpenAIClient } from '../services/openai'
 import type { ChatMessage, ChatRequest } from '../../shared/types'
 import logger from '../utils/logger'
 import { IPC_CHANNELS, IPC_SEND } from '../../shared/constants'
-import { AI_KEYS, DEFAULT_MODEL, DEFAULT_THINKING, DEFAULT_CONTEXT_COUNT } from './aiConfig'
+import { AI_KEYS, DEFAULT_MODEL, DEFAULT_CONTEXT_COUNT } from './aiConfig'
 import { getMessagesByConversationId } from '../database/messages'
 import { getConversationById } from '../database/conversations'
 import { getCharacterById } from '../database/characters'
@@ -19,7 +19,7 @@ export function registerChatIpcHandlers(): void {
         try {
             const client = getOpenAIClient()
             const model = getObject<string>(AI_KEYS.MODEL) || DEFAULT_MODEL
-            const thinkingMode = getObject<boolean>(AI_KEYS.THINKING_MODE) ?? DEFAULT_THINKING
+            const thinkingMode = true
             const contextCount = getObject<number>(AI_KEYS.CONTEXT_COUNT) ?? DEFAULT_CONTEXT_COUNT
 
             // 获取角色 system prompt
@@ -41,7 +41,12 @@ export function registerChatIpcHandlers(): void {
                     content: msg.content
                 })
             })
-            messages.push({ role: 'user', content: request.content })
+            const lastMessage = messages[messages.length - 1]
+            const isDuplicatedLatestUserMessage =
+                lastMessage?.role === 'user' && lastMessage.content === request.content
+            if (!isDuplicatedLatestUserMessage) {
+                messages.push({ role: 'user', content: request.content })
+            }
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const params: any = { model, messages }
@@ -67,7 +72,7 @@ export function registerChatIpcHandlers(): void {
         try {
             const client = getOpenAIClient()
             const model = getObject<string>(AI_KEYS.MODEL) || DEFAULT_MODEL
-            const thinkingMode = getObject<boolean>(AI_KEYS.THINKING_MODE) ?? DEFAULT_THINKING
+            const thinkingMode = true
             const contextCount = getObject<number>(AI_KEYS.CONTEXT_COUNT) ?? DEFAULT_CONTEXT_COUNT
 
             // 获取角色 system prompt
@@ -91,7 +96,12 @@ export function registerChatIpcHandlers(): void {
                     content: msg.content
                 })
             })
-            messages.push({ role: 'user', content: request.content })
+            const lastMessage = messages[messages.length - 1]
+            const isDuplicatedLatestUserMessage =
+                lastMessage?.role === 'user' && lastMessage.content === request.content
+            if (!isDuplicatedLatestUserMessage) {
+                messages.push({ role: 'user', content: request.content })
+            }
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const params: any = { model, messages, stream: true }
@@ -176,7 +186,7 @@ export function registerChatIpcHandlers(): void {
     ipcMain.handle(IPC_CHANNELS.AI_STREAM_CANCEL, async (_, requestId: string) => {
         const stream = activeStreams.get(requestId)
         if (stream) {
-            stream.abort()
+            stream.controller.abort()
             activeStreams.delete(requestId)
             logger.info('流已取消:', requestId)
         }
