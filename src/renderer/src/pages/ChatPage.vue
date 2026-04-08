@@ -545,6 +545,7 @@ const chatContentRef = ref<HTMLElement | null>(null)
 const activeStreamRequestId = ref('')
 const pendingStreamConversationId = ref('')
 const streamingMessageId = ref('')
+const streamStarted = ref(false)
 const streamContent = ref('')
 const streamThinking = ref('')
 const streamExpectThinking = ref(false)
@@ -617,6 +618,7 @@ const displayMessages = computed<DisplayMessage[]>(() => {
     }))
 
     if (
+        streamStarted.value &&
         streamingMessageId.value &&
         pendingStreamConversationId.value === activeConversationId.value
     ) {
@@ -1083,6 +1085,7 @@ function resetStreamingState(): void {
     pendingStreamConversationId.value = ''
     streamingMessageId.value = ''
     streamContent.value = ''
+    streamStarted.value = false
     streamThinking.value = ''
     streamExpectThinking.value = false
     streamHasReasoning.value = false
@@ -1092,6 +1095,7 @@ function resetStreamingState(): void {
 function setupStreamListeners(): void {
     unsubscribeStreamStart = window.api.onStreamStart((requestId) => {
         activeStreamRequestId.value = requestId
+        streamStarted.value = true
     })
 
     unsubscribeStreamChunk = window.api.onStreamChunk((chunk, type, requestId) => {
