@@ -40,7 +40,9 @@ jobs:
               run: pnpm install --frozen-lockfile
 
             - name: Build Windows installer
-              run: pnpm build:win
+              run: |
+                  pnpm build
+                  pnpm exec electron-builder --win --publish never
 
             - name: Publish GitHub Release
               uses: softprops/action-gh-release@v2
