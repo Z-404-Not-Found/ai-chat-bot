@@ -174,7 +174,7 @@
                             >
                                 <div
                                     v-if="item.role === 'assistant' && item.thinking"
-                                    class="mb-3 rounded-border border border-surface-200 dark:border-surface-700 bg-emphasis p-2 transition-motion"
+                                    class="mb-3 rounded-border border border-surface-200 dark:border-surface-700 bg-emphasis p-2"
                                 >
                                     <div class="mb-1 text-xs font-semibold text-muted-color">
                                         思考过程
@@ -522,8 +522,7 @@ import type {
     CreateMessageInput,
     CreateConversationInput,
     Message,
-    UpdateCharacterInput,
-    UpdateConversationInput
+    UpdateCharacterInput
 } from '@shared/types'
 import { useLayoutToast } from '@renderer/composables/useLayoutToast'
 
@@ -701,6 +700,10 @@ function getDefaultConversationTitle(content: string): string {
     return firstLine || '新对话'
 }
 
+function isPlaceholderConversationTitle(title: string): boolean {
+    return title.trim().startsWith('新对话')
+}
+
 function getExportTimestamp(): string {
     const date = new Date()
     return `${date.getFullYear()}${pad2(date.getMonth() + 1)}${pad2(date.getDate())}_${pad2(
@@ -868,14 +871,7 @@ async function refreshMessages(conversationId: string): Promise<void> {
 }
 
 async function touchConversation(id: string): Promise<void> {
-    const current = conversationList.value.find((item) => item.id === id)
-    if (!current) return
-
-    const input: UpdateConversationInput = {
-        title: current.title
-    }
-
-    await window.api.updateConversation(id, input)
+    await window.api.updateConversation(id, {})
 }
 
 async function ensureConversation(): Promise<Conversation | null> {
@@ -1064,7 +1060,7 @@ async function addConversation(): Promise<void> {
     try {
         const input: CreateConversationInput = {
             character_id: activeRole.value.id,
-            title: `新对话 ${new Date().toLocaleString('zh-CN', { hour12: false })}`
+            title: '新对话'
         }
 
         const created = await window.api.createConversation(input)
@@ -1309,6 +1305,8 @@ async function sendMessage(): Promise<void> {
         const conversationId = ensuredConversation.id
         activeConversationId.value = conversationId
         const isFirstUserMessage = messageList.value.length === 0
+        const shouldUpdateConversationTitle =
+            isFirstUserMessage && isPlaceholderConversationTitle(ensuredConversation.title)
 
         const userInput: CreateMessageInput = {
             conversation_id: conversationId,
@@ -1318,7 +1316,7 @@ async function sendMessage(): Promise<void> {
 
         await window.api.createMessage(userInput)
 
-        if (isFirstUserMessage) {
+        if (shouldUpdateConversationTitle) {
             const title = getDefaultConversationTitle(content)
             await window.api.updateConversation(conversationId, { title })
         }

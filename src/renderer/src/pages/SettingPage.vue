@@ -7,7 +7,7 @@
                         <div class="flex-1">
                             <div class="font-semibold">主题预设</div>
                             <div class="text-sm text-surface-500 dark:text-surface-400">
-                                切换 PrimeVue 主题 preset（统一 Slate 配色）。
+                                切换 PrimeVue 主题预设。
                             </div>
                         </div>
                         <SelectButton
