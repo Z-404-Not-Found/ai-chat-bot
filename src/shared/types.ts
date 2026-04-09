@@ -98,3 +98,63 @@ export interface StreamEndData {
     requestId?: string
     error?: string
 }
+
+export interface SyncAuthInput {
+    username: string
+    password: string
+}
+
+export interface SyncAuthUser {
+    id: string
+    username: string
+}
+
+export interface SyncAuthResult {
+    success: boolean
+    user?: SyncAuthUser
+    error?: string
+    code?: string
+}
+
+export interface SyncStatus {
+    loggedIn: boolean
+    username?: string
+    deviceId: string
+    lastSince: number
+    lastSyncAt?: number
+}
+
+export interface SyncUploadSummary {
+    received: {
+        characters: number
+        conversations: number
+        messages: number
+    }
+    applied: {
+        characters: number
+        conversations: number
+        messages: number
+    }
+}
+
+export interface SyncPullData {
+    server_time: number
+    next_since: number
+    characters: Omit<Character, 'sync_status'>[]
+    conversations: Omit<Conversation, 'sync_status'>[]
+    messages: Omit<Message, 'sync_status'>[]
+}
+
+export interface SyncRunResult {
+    success: boolean
+    upload?: SyncUploadSummary
+    pull?: {
+        characters: number
+        conversations: number
+        messages: number
+    }
+    nextSince?: number
+    serverTime?: number
+    error?: string
+    code?: string
+}

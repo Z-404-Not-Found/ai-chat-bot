@@ -8,7 +8,11 @@ import type {
     UpdateCharacterInput,
     CreateConversationInput,
     UpdateConversationInput,
-    CreateMessageInput
+    CreateMessageInput,
+    SyncAuthInput,
+    SyncAuthResult,
+    SyncStatus,
+    SyncRunResult
 } from '../shared/types'
 
 declare global {
@@ -57,6 +61,13 @@ declare global {
             getMessages: (conversationId: string) => Promise<Message[]>
             createMessage: (input: CreateMessageInput) => Promise<Message>
             deleteMessage: (id: string) => Promise<{ success: boolean }>
+
+            // Sync 同步
+            syncRegister: (input: SyncAuthInput) => Promise<SyncAuthResult>
+            syncLogin: (input: SyncAuthInput) => Promise<SyncAuthResult>
+            syncLogout: () => Promise<{ success: boolean }>
+            getSyncStatus: () => Promise<SyncStatus>
+            runSync: () => Promise<SyncRunResult>
 
             // Window 窗口控制
             minimize: () => Promise<{ success: boolean }>

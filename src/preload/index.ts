@@ -10,7 +10,11 @@ import type {
     UpdateCharacterInput,
     CreateConversationInput,
     UpdateConversationInput,
-    CreateMessageInput
+    CreateMessageInput,
+    SyncAuthInput,
+    SyncAuthResult,
+    SyncStatus,
+    SyncRunResult
 } from '../shared/types'
 
 // 允许调用的 IPC 通道白名单
@@ -33,6 +37,11 @@ const ALLOWED_INVOKE_CHANNELS = [
     IPC_CHANNELS.MESSAGE_LIST,
     IPC_CHANNELS.MESSAGE_CREATE,
     IPC_CHANNELS.MESSAGE_DELETE,
+    IPC_CHANNELS.SYNC_AUTH_REGISTER,
+    IPC_CHANNELS.SYNC_AUTH_LOGIN,
+    IPC_CHANNELS.SYNC_AUTH_LOGOUT,
+    IPC_CHANNELS.SYNC_STATUS_GET,
+    IPC_CHANNELS.SYNC_RUN,
     IPC_CHANNELS.WINDOW_MINIMIZE,
     IPC_CHANNELS.WINDOW_MAXIMIZE,
     IPC_CHANNELS.WINDOW_CLOSE,
@@ -224,6 +233,27 @@ const api = {
 
     deleteMessage: (id: string): Promise<{ success: boolean }> => {
         return ipcRenderer.invoke(IPC_CHANNELS.MESSAGE_DELETE, id) as Promise<{ success: boolean }>
+    },
+
+    // Sync 同步
+    syncRegister: (input: SyncAuthInput): Promise<SyncAuthResult> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.SYNC_AUTH_REGISTER, input) as Promise<SyncAuthResult>
+    },
+
+    syncLogin: (input: SyncAuthInput): Promise<SyncAuthResult> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.SYNC_AUTH_LOGIN, input) as Promise<SyncAuthResult>
+    },
+
+    syncLogout: (): Promise<{ success: boolean }> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.SYNC_AUTH_LOGOUT) as Promise<{ success: boolean }>
+    },
+
+    getSyncStatus: (): Promise<SyncStatus> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.SYNC_STATUS_GET) as Promise<SyncStatus>
+    },
+
+    runSync: (): Promise<SyncRunResult> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.SYNC_RUN) as Promise<SyncRunResult>
     },
 
     // Window 窗口控制

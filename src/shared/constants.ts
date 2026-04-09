@@ -31,6 +31,13 @@ export const IPC_CHANNELS = {
     MESSAGE_CREATE: 'message:create',
     MESSAGE_DELETE: 'message:delete',
 
+    // Sync 同步
+    SYNC_AUTH_REGISTER: 'sync:auth:register',
+    SYNC_AUTH_LOGIN: 'sync:auth:login',
+    SYNC_AUTH_LOGOUT: 'sync:auth:logout',
+    SYNC_STATUS_GET: 'sync:status:get',
+    SYNC_RUN: 'sync:run',
+
     // Window 窗口控制
     WINDOW_MINIMIZE: 'window:minimize',
     WINDOW_MAXIMIZE: 'window:maximize',
